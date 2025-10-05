@@ -19,7 +19,7 @@ const Index = () => {
         <div 
           className="absolute inset-0 bg-white/70 backdrop-blur-md"
           style={{
-            clipPath: 'polygon(35% 0, 100% 0, 100% 100%, 45% 100%)',
+            clipPath: 'polygon(50% 0, 100% 0, 100% 100%, 60% 100%)',
           }}
         />
         
