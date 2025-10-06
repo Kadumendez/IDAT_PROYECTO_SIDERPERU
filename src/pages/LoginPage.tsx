@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login, getRemainingLockTime, isAuthenticated } from "@/lib/auth";
 import { showToast } from "@/components/Toast";
+import { Eye, EyeOff } from "lucide-react";
 import siderperuLogo from "@/assets/siderperu-logo.png";
 import fondoIndustrial from "@/assets/fondo-industrial.jpg";
 
@@ -12,6 +13,7 @@ export const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -77,28 +79,21 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen relative overflow-hidden">
-      {/* Left side - Industrial background image (50% width) */}
-      <div className="absolute inset-0 w-1/2">
-        <img 
-          src={fondoIndustrial} 
-          alt="Trabajadores industriales SIDERPERU" 
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background image - full screen cover */}
+      <div 
+        className="absolute inset-0 -z-10 bg-cover bg-center"
+        style={{ backgroundImage: `url(${fondoIndustrial})` }}
+        aria-hidden="true"
+      />
 
-      {/* Right side - Login Form with diagonal edge */}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-end">
-        {/* Diagonal white overlay with backdrop blur */}
-        <div 
-          className="absolute inset-0 bg-white/70 backdrop-blur-md dark:bg-slate-900/70"
-          style={{
-            clipPath: 'polygon(40% 0, 100% 0, 100% 100%, 50% 100%)',
-          }}
-        />
-        
-        {/* Form content */}
-        <div className="relative z-10 w-full max-w-md mr-12 lg:mr-24 px-8">
+      {/* Responsive overlay - dark on desktop, white on mobile */}
+      <div className="absolute inset-0 bg-white/55 backdrop-blur-md md:bg-black/30 md:backdrop-blur-sm" />
+
+      {/* Content wrapper */}
+      <div className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 md:justify-end md:px-8 lg:px-12">
+        {/* Form card */}
+        <div className="w-full max-w-md rounded-2xl bg-white/85 backdrop-blur-md shadow-xl p-6 sm:p-8 md:p-10">
           <div className="flex flex-col items-center mb-8">
             <img 
               src={siderperuLogo} 
@@ -148,16 +143,31 @@ export const LoginPage = () => {
                   ¿Has olvidado tu contraseña?
                 </Link>
               </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLocked}
-                placeholder="Ingrese su contraseña"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLocked}
+                  placeholder="Ingrese su contraseña"
+                  className="w-full px-4 py-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLocked}
+                  className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center">
