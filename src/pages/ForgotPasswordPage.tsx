@@ -1,53 +1,40 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { showToast } from "@/components/Toast";
+import { sendResetEmail } from "@/lib/email";
 import siderperuLogo from "@/assets/siderperu-logo.png";
-
-/**
- * OPTIONAL: EmailJS Integration
- * To enable real email sending:
- * 1. Install: npm install @emailjs/browser
- * 2. Replace SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY with your EmailJS credentials
- * 3. Set useMockEmail to false
- */
-
-// const SERVICE_ID = "your_service_id";
-// const TEMPLATE_ID = "your_template_id";
-// const PUBLIC_KEY = "your_public_key";
 
 export const ForgotPasswordPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const useMockEmail = true; // Set to false to use real EmailJS
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validación básica de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showToast("error", "Por favor ingresa un correo electrónico válido");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      if (useMockEmail) {
-        // SIMULATED mode - just wait and show success
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        showToast("success", "Enlace enviado, expira en 5 minutos");
-        navigate("/email-sent");
-      } else {
-        // REAL EmailJS mode (uncomment when ready)
-        // const emailjs = await import("@emailjs/browser");
-        // await emailjs.send(
-        //   SERVICE_ID,
-        //   TEMPLATE_ID,
-        //   {
-        //     to_email: email,
-        //     reset_link: `${window.location.origin}/reset-password`
-        //   },
-        //   PUBLIC_KEY
-        // );
-        showToast("success", "Enlace enviado, expira en 5 minutos");
-        navigate("/email-sent");
-      }
-    } catch (error) {
-      showToast("error", "Error al enviar el correo. Inténtelo nuevamente.");
+      // Generar token mock para demo (en producción esto debe hacerse en backend)
+      const token = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+      const resetLink = `${window.location.origin}/reset-password?token=${token}`;
+
+      // Enviar email real con EmailJS
+      await sendResetEmail(email, resetLink);
+
+      // Mensaje neutral por seguridad (no revelar si el email existe)
+      showToast("success", "Si el correo existe, te enviaremos un enlace para restablecer tu contraseña");
+      navigate("/email-sent");
+    } catch (error: any) {
+      console.error("Error en recuperación de contraseña:", error);
+      showToast("error", "No pudimos enviar el correo, intenta de nuevo");
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +80,10 @@ export const ForgotPasswordPage = () => {
             <button
               type="submit"
               disabled={isLoading}
+              aria-busy={isLoading}
               className="w-full bg-gray-900 dark:bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Enviando..." : "Solicitar Código"}
+              {isLoading ? "Enviando..." : "Enviar enlace de recuperación"}
             </button>
           </form>
 
@@ -104,7 +92,7 @@ export const ForgotPasswordPage = () => {
               to="/login" 
               className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
             >
-              "Volver a inicio de sesión"
+              Volver a inicio de sesión
             </Link>
           </div>
 

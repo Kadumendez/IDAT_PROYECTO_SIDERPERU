@@ -25,7 +25,7 @@ export const EmailSentPage = () => {
               to="/login" 
               className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
             >
-              "Volver a inicio de sesión"
+              Volver a inicio de sesión
             </Link>
           </div>
 
