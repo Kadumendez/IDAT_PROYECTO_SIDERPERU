@@ -1,26 +1,64 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "./components/ToastContainer";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { LoginPage } from "./pages/LoginPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { EmailSentPage } from "./pages/EmailSentPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { PlanosPage } from "./pages/PlanosPage";
+import { HistorialPage } from "./pages/HistorialPage";
+import { UploadsPage } from "./pages/UploadsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/email-sent" element={<EmailSentPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/planos" 
+          element={
+            <ProtectedRoute>
+              <PlanosPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/historial" 
+          element={
+            <ProtectedRoute>
+              <HistorialPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/uploads" 
+          element={
+            <ProtectedRoute>
+              <UploadsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <ToastContainer />
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
