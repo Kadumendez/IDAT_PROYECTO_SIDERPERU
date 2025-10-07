@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { showToast } from "@/components/Toast";
 import { sendResetEmail } from "@/lib/email";
 import siderperuLogo from "@/assets/siderperu-logo.png";
+import fondoIndustrial from "@/assets/fondo-industrial.jpg";
 
 export const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -41,24 +42,36 @@ export const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-md rounded-3xl shadow-xl p-8">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background image - full screen cover */}
+      <div 
+        className="absolute inset-0 -z-10 bg-cover bg-center"
+        style={{ backgroundImage: `url(${fondoIndustrial})` }}
+        aria-hidden="true"
+      />
+
+      {/* Responsive overlay - dark on desktop, white on mobile */}
+      <div className="absolute inset-0 bg-white/55 backdrop-blur-md md:bg-black/30 md:backdrop-blur-sm" />
+
+      {/* Content wrapper */}
+      <div className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 md:justify-end md:px-8 lg:px-12">
+        {/* Form card */}
+        <div className="w-full max-w-md rounded-2xl bg-white/85 backdrop-blur-md shadow-xl p-6 sm:p-8 md:p-10">
           <div className="flex flex-col items-center mb-8">
             <img 
               src={siderperuLogo} 
               alt="SIDERPERU" 
-              className="h-14 mb-8"
+              className="h-16 mb-6"
             />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Restablecer contraseña
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-center text-sm leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-400 text-center">
               Se enviará un enlace para poder restablecer la contraseña. (El enlace expira en 5 minutos)
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label 
                 htmlFor="email" 
@@ -87,16 +100,16 @@ export const ForgotPasswordPage = () => {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="text-center mt-6">
             <Link 
               to="/login" 
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+              className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
             >
               Volver a inicio de sesión
             </Link>
           </div>
 
-          <footer className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+          <footer className="mt-12 text-center text-xs text-gray-500 dark:text-gray-400">
             © 2025 Gestión de Planos — Demo UI
           </footer>
         </div>
