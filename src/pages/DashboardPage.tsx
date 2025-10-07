@@ -23,6 +23,12 @@ import {
   Bell,
   Sparkles
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /**
  * DEMO DATA
@@ -161,9 +167,12 @@ export const DashboardPage = () => {
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
 
-            <div className="relative">
+            <div 
+              className="relative"
+              onMouseEnter={() => setShowUserMenu(true)}
+              onMouseLeave={() => setShowUserMenu(false)}
+            >
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-3 hover:bg-muted dark:hover:bg-slate-800 px-3 py-2 rounded-xl transition-all"
               >
                 <div className="w-9 h-9 rounded-full bg-primary dark:bg-red-600 flex items-center justify-center text-white">
@@ -172,27 +181,29 @@ export const DashboardPage = () => {
                 <ChevronDown className="w-4 h-4 text-muted-foreground dark:text-gray-400" />
               </button>
 
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-card dark:bg-slate-800 rounded-xl shadow-lg border border-border dark:border-slate-700 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      setShowSettingsModal(true);
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted dark:hover:bg-slate-700 text-left text-sm transition-colors"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span className="text-foreground dark:text-gray-200">Ajustes de usuario</span>
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted dark:hover:bg-slate-700 text-left text-sm text-red-600 dark:text-red-400 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Cerrar sesión
-                  </button>
-                </div>
-              )}
+              <div className={`absolute right-0 mt-2 w-56 bg-card dark:bg-slate-800 rounded-xl shadow-lg border border-border dark:border-slate-700 py-2 z-50 transition-all duration-200 origin-top ${
+                showUserMenu 
+                  ? 'opacity-100 scale-y-100 translate-y-0' 
+                  : 'opacity-0 scale-y-95 -translate-y-2 pointer-events-none'
+              }`}>
+                <button
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted dark:hover:bg-slate-700 text-left text-sm transition-colors"
+                >
+                  <Settings className="w-5 h-5 text-white dark:text-white" />
+                  <span className="text-foreground dark:text-gray-200">Ajustes de usuario</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted dark:hover:bg-slate-700 text-left text-sm text-red-600 dark:text-red-400 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar sesión
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -200,61 +211,68 @@ export const DashboardPage = () => {
         {/* Dashboard Content - Scrollable */}
         <main className="flex-1 p-8 overflow-auto mt-[73px]">
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {METRICS.map((metric, index) => {
-              const colorClasses = {
-                blue: "bg-blue-500/10 text-blue-600",
-                orange: "bg-orange-500/10 text-orange-600",
-                green: "bg-green-500/10 text-green-600",
-                purple: "bg-purple-500/10 text-purple-600"
-              };
-              const iconBgClasses = {
-                blue: "bg-blue-500/20",
-                orange: "bg-orange-500/20",
-                green: "bg-green-500/20",
-                purple: "bg-purple-500/20"
-              };
-              
-              return (
-                <div
-                  key={index}
-                  className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6 hover:shadow-lg hover:shadow-primary/5 transition-all hover:scale-[1.02]"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${iconBgClasses[metric.color as keyof typeof iconBgClasses]}`}>
-                      <metric.icon className={`w-6 h-6 ${colorClasses[metric.color as keyof typeof colorClasses]}`} />
+          <TooltipProvider>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {METRICS.map((metric, index) => {
+                const iconClasses = {
+                  blue: "text-blue-600",
+                  orange: "text-orange-600",
+                  green: "text-green-600",
+                  purple: "text-purple-600"
+                };
+                const iconBgClasses = {
+                  blue: "bg-blue-500/20",
+                  orange: "bg-orange-500/20",
+                  green: "bg-green-500/20",
+                  purple: "bg-purple-500/20"
+                };
+                
+                return (
+                  <div
+                    key={index}
+                    className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6 hover:shadow-lg hover:shadow-primary/5 transition-all hover:scale-[1.02]"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${iconBgClasses[metric.color as keyof typeof iconBgClasses]}`}>
+                          <metric.icon className={`w-6 h-6 ${iconClasses[metric.color as keyof typeof iconClasses]}`} />
+                        </div>
+                        <p className="text-3xl font-bold text-foreground dark:text-gray-100">
+                          {metric.value}
+                        </p>
+                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg cursor-help ${
+                            metric.trendUp 
+                              ? 'bg-green-500/10 text-green-600' 
+                              : 'bg-red-500/10 text-red-600'
+                          }`}>
+                            {metric.trend}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm">Este porcentaje muestra el cambio respecto al período anterior (mes pasado).</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
-                      metric.trendUp 
-                        ? 'bg-green-500/10 text-green-600' 
-                        : 'bg-red-500/10 text-red-600'
-                    }`}>
-                      {metric.trend}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-foreground dark:text-gray-100 mb-1">
-                      {metric.value}
-                    </p>
                     <p className="text-sm text-muted-foreground dark:text-gray-400">
                       {metric.label}
                     </p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </TooltipProvider>
 
           {/* Activity Feed */}
           <div className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <RotateCcw className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
-                <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">
-                  Actividad reciente
-                </h2>
-              </div>
-              <span className="text-sm text-muted-foreground dark:text-gray-500">(Últimos 10)</span>
+            <div className="flex items-center gap-3 mb-6">
+              <RotateCcw className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">
+                Actividad reciente
+              </h2>
+              <span className="text-sm text-muted-foreground/80 dark:text-gray-400">(Últimos 10)</span>
             </div>
 
             <div className="space-y-3">
@@ -270,31 +288,6 @@ export const DashboardPage = () => {
                     {activity.text}
                   </span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Access */}
-          <div className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <LayoutDashboard className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">
-                Accesos rápidos
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {QUICK_ACCESS.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => navigate(item.path)}
-                  className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-muted dark:bg-slate-700/50 border border-border dark:border-slate-600 hover:bg-muted/80 dark:hover:bg-slate-700 transition-all text-left"
-                >
-                  <item.icon className="w-5 h-5 text-foreground dark:text-gray-300" />
-                  <span className="text-sm font-medium text-foreground dark:text-gray-200">
-                    {item.label}
-                  </span>
-                </button>
               ))}
             </div>
           </div>
