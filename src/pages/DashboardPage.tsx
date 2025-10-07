@@ -29,9 +29,10 @@ import {
  * Change these arrays to customize metrics and activity feed
  */
 const METRICS = [
-  { icon: Folder, label: "Planos totales", value: 128 },
-  { icon: RotateCcw, label: "Revisiones pendientes", value: 5 },
-  { icon: FolderUp, label: "Subidos esta semana", value: 12 }
+  { icon: Folder, label: "Planos totales", value: 128, trend: "+12%", trendUp: true, color: "blue" },
+  { icon: RotateCcw, label: "Revisiones pendientes", value: 5, trend: "-3%", trendUp: false, color: "orange" },
+  { icon: FolderUp, label: "Subidos esta semana", value: 12, trend: "+8%", trendUp: true, color: "green" },
+  { icon: FileCheck, label: "Planos aprobados", value: 98, trend: "+5%", trendUp: true, color: "purple" }
 ];
 
 const ACTIVITIES = [
@@ -45,7 +46,7 @@ const ACTIVITIES = [
   { time: "Ayer", text: "PL-0039 corregido por Miranda (Eléctrico • v2)" },
   { time: "Ayer", text: "PL-0048 aprobado por QA (Fundición)" },
   { time: "Ayer", text: "Carga masiva de 8 planos (Galvanizado)" }
-];
+].slice(0, 10);
 
 const QUICK_ACCESS = [
   { icon: BarChart3, label: "Ir a Planos (Listado)", path: "/planos" },
@@ -96,9 +97,9 @@ export const DashboardPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background dark flex w-full">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card dark:bg-slate-900 border-r border-border dark:border-slate-800 flex flex-col">
+    <div className="min-h-screen bg-background dark flex w-full overflow-hidden">
+      {/* Sidebar - Fixed */}
+      <aside className="w-64 bg-card dark:bg-slate-900 border-r border-border dark:border-slate-800 flex flex-col fixed left-0 top-0 h-screen z-40">
         <div className="p-6 border-b border-border dark:border-slate-800">
           <img src={siderperuLogo} alt="SIDERPERU" className="h-12 mb-4" />
           <h1 className="text-xl font-bold text-foreground dark:text-gray-100">
@@ -128,9 +129,9 @@ export const DashboardPage = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-card dark:bg-slate-900 border-b border-border dark:border-slate-800 px-8 py-4 flex items-center justify-end">
+      <div className="flex-1 flex flex-col ml-64">
+        {/* Header - Fixed */}
+        <header className="bg-card dark:bg-slate-900 border-b border-border dark:border-slate-800 px-8 py-4 flex items-center justify-end fixed top-0 right-0 left-64 z-30">
           {/* Right side user info with buttons */}
           <div className="flex items-center gap-3">
             {/* Consultor IA - Yellow/Amber style */}
@@ -196,37 +197,64 @@ export const DashboardPage = () => {
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <main className="flex-1 p-8 overflow-auto">
+        {/* Dashboard Content - Scrollable */}
+        <main className="flex-1 p-8 overflow-auto mt-[73px]">
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {METRICS.map((metric, index) => (
-              <div
-                key={index}
-                className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6 hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {METRICS.map((metric, index) => {
+              const colorClasses = {
+                blue: "bg-blue-500/10 text-blue-600",
+                orange: "bg-orange-500/10 text-orange-600",
+                green: "bg-green-500/10 text-green-600",
+                purple: "bg-purple-500/10 text-purple-600"
+              };
+              const iconBgClasses = {
+                blue: "bg-blue-500/20",
+                orange: "bg-orange-500/20",
+                green: "bg-green-500/20",
+                purple: "bg-purple-500/20"
+              };
+              
+              return (
+                <div
+                  key={index}
+                  className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6 hover:shadow-lg hover:shadow-primary/5 transition-all hover:scale-[1.02]"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl ${iconBgClasses[metric.color as keyof typeof iconBgClasses]}`}>
+                      <metric.icon className={`w-6 h-6 ${colorClasses[metric.color as keyof typeof colorClasses]}`} />
+                    </div>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
+                      metric.trendUp 
+                        ? 'bg-green-500/10 text-green-600' 
+                        : 'bg-red-500/10 text-red-600'
+                    }`}>
+                      {metric.trend}
+                    </span>
+                  </div>
                   <div>
-                    <p className="text-4xl font-bold text-foreground dark:text-gray-100 mb-2">
+                    <p className="text-3xl font-bold text-foreground dark:text-gray-100 mb-1">
                       {metric.value}
                     </p>
                     <p className="text-sm text-muted-foreground dark:text-gray-400">
                       {metric.label}
                     </p>
                   </div>
-                  <metric.icon className="w-10 h-10 text-muted-foreground dark:text-gray-500" />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Activity Feed */}
           <div className="bg-card dark:bg-slate-800/50 border border-border dark:border-slate-700 rounded-2xl p-6 mb-8">
-            <div className="flex items-center gap-3 mb-6">
-              <RotateCcw className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">
-                Actividad reciente
-              </h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <RotateCcw className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
+                <h2 className="text-lg font-semibold text-foreground dark:text-gray-100">
+                  Actividad reciente
+                </h2>
+              </div>
+              <span className="text-sm text-muted-foreground dark:text-gray-500">(Últimos 10)</span>
             </div>
 
             <div className="space-y-3">
