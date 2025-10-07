@@ -67,6 +67,7 @@ export const DashboardPage = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeRoute, setActiveRoute] = useState("dashboard");
   const [showAIChat, setShowAIChat] = useState(false);
+  const [isAIChatMinimized, setIsAIChatMinimized] = useState(false);
 
   // Apply light theme on mount
   useEffect(() => {
@@ -77,6 +78,24 @@ export const DashboardPage = () => {
       document.documentElement.classList.remove("dark");
     }
   }, []);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showUserMenu && !target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const handleLogout = () => {
     logout();
@@ -168,11 +187,10 @@ export const DashboardPage = () => {
             </button>
 
             <div 
-              className="relative"
-              onMouseEnter={() => setShowUserMenu(true)}
-              onMouseLeave={() => setShowUserMenu(false)}
+              className="relative user-menu-container"
             >
               <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-3 hover:bg-muted dark:hover:bg-slate-800 px-3 py-2 rounded-xl transition-all"
               >
                 <div className="w-9 h-9 rounded-full bg-primary dark:bg-red-600 flex items-center justify-center text-white">
@@ -211,7 +229,7 @@ export const DashboardPage = () => {
         {/* Dashboard Content - Scrollable */}
         <main className="flex-1 p-8 overflow-auto mt-[73px]">
           {/* Metrics Cards */}
-          <TooltipProvider>
+          <TooltipProvider delayDuration={0}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {METRICS.map((metric, index) => {
                 const iconClasses = {
@@ -301,19 +319,31 @@ export const DashboardPage = () => {
       />
 
       {/* AI Chat Assistant */}
-      {showAIChat && (
-        <div className="fixed bottom-6 left-6 w-96 h-[500px] bg-card dark:bg-slate-800 rounded-2xl shadow-2xl border border-border dark:border-slate-700 flex flex-col z-50">
+      {showAIChat && !isAIChatMinimized && (
+        <div className="fixed bottom-6 left-6 w-96 h-[500px] bg-card dark:bg-slate-800 rounded-2xl shadow-2xl border border-border dark:border-slate-700 flex flex-col z-50 animate-scale-in">
           <div className="flex items-center justify-between p-4 border-b border-border dark:border-slate-700">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary dark:text-red-400" />
+              <Sparkles className="w-5 h-5 text-[#fbbf24]" />
               <h3 className="font-semibold text-foreground dark:text-gray-100">Consultor IA</h3>
             </div>
-            <button
-              onClick={() => setShowAIChat(false)}
-              className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsAIChatMinimized(true)}
+                className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                title="Minimizar"
+              >
+                <ChevronDown className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => {
+                  setShowAIChat(false);
+                  setIsAIChatMinimized(false);
+                }}
+                className="text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 p-4 overflow-auto">
@@ -339,6 +369,18 @@ export const DashboardPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Chat Minimized Bubble */}
+      {showAIChat && isAIChatMinimized && (
+        <button
+          onClick={() => setIsAIChatMinimized(false)}
+          className="fixed bottom-6 left-6 w-16 h-16 bg-[#3a3830] border-2 border-[#b8860b] rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all z-50 animate-scale-in group"
+          title="Abrir Consultor IA"
+        >
+          <Sparkles className="w-7 h-7 text-[#fbbf24] group-hover:animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#fbbf24] rounded-full animate-pulse"></span>
+        </button>
       )}
     </div>
   );
