@@ -130,29 +130,28 @@ export const DashboardPage = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-card dark:bg-slate-900 border-b border-border dark:border-slate-800 px-8 py-4 flex items-center justify-between">
-          {/* Left side buttons */}
+        <header className="bg-card dark:bg-slate-900 border-b border-border dark:border-slate-800 px-8 py-4 flex items-center justify-end">
+          {/* Right side user info with buttons */}
           <div className="flex items-center gap-3">
+            {/* Consultor IA - Yellow/Amber style */}
             <button
               onClick={() => setShowAIChat(!showAIChat)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 dark:bg-red-500/10 text-primary dark:text-red-400 hover:bg-primary/20 dark:hover:bg-red-500/20 transition-all font-medium text-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#3a3830] border border-[#b8860b] text-[#fbbf24] hover:bg-[#454035] transition-all font-medium text-sm"
             >
-              <Sparkles className="w-4 h-4" />
+              <div className="w-2 h-2 rounded-full bg-[#fbbf24]"></div>
               Consultor IA
             </button>
             
+            {/* Subir DWG/PDF - Green style */}
             <button
               onClick={() => navigate("/planos")}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border dark:border-slate-700 hover:bg-muted dark:hover:bg-slate-800 transition-all font-medium text-sm text-foreground dark:text-gray-200"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1a3a2a] border border-[#34d399] text-[#34d399] hover:bg-[#234d38] transition-all font-medium text-sm"
             >
               <Upload className="w-4 h-4" />
               Subir DWG/PDF
             </button>
-          </div>
 
-          {/* Right side user info */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-foreground dark:text-gray-200">
+            <span className="text-sm font-medium text-foreground dark:text-gray-200 ml-2">
               Kadú Desposorio
             </span>
             
