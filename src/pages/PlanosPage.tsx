@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +15,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
-// Mock data
+// Mock data - determine if it's the latest version (isActual)
 const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => ({
   id: i + 1,
   codigo: `PL-${String(i + 1).padStart(4, '0')}`,
@@ -22,8 +23,9 @@ const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => ({
   zona: ['Laminados', 'Fundición', 'Galvanizado'][i % 3],
   subzona: ['Zona A', 'Zona B', 'Zona C'][i % 3],
   sistema: ['Eléctrico', 'Hidráulico', 'Estructuras'][i % 3],
-  version: `v${(i % 3) + 1}`,
-  estado: ['Actual', 'Pendiente', 'En revisión', 'Clasificado'][i % 4],
+  version: (i % 4) + 1,
+  isActual: i % 4 === 3, // Every 4th item is the latest version
+  estado: ['Pendiente', 'Aprobado', 'En revisión'][i % 3],
   actualizado: new Date(2025, Math.floor(i / 10), (i % 28) + 1).toISOString(),
 }));
 
@@ -50,7 +52,7 @@ export const PlanosPage = () => {
     const matchesZona = !zonaFilter || plano.zona === zonaFilter;
     const matchesSubzona = !subzonaFilter || plano.subzona === subzonaFilter;
     const matchesSistema = !sistemaFilter || plano.sistema === sistemaFilter;
-    const matchesVersion = !versionFilter || plano.version === versionFilter;
+    const matchesVersion = !versionFilter || plano.version === parseInt(versionFilter);
     const matchesEstado = !estadoFilter || plano.estado === estadoFilter;
     
     let matchesDate = true;
@@ -87,23 +89,16 @@ export const PlanosPage = () => {
     }
   }, [visibleCount, filteredPlanos.length]);
 
-  const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
+  const getEstadoNeonStyle = (estado: string) => {
     switch (estado) {
-      case 'Actual': return 'default';
-      case 'Clasificado': return 'default';
-      case 'En revisión': return 'secondary';
-      case 'Pendiente': return 'destructive';
-      default: return 'outline';
-    }
-  };
-
-  const getEstadoBadgeColor = (estado: string) => {
-    switch (estado) {
-      case 'Actual': return 'bg-green-100 text-green-700 border-green-300';
-      case 'Clasificado': return 'bg-green-100 text-green-700 border-green-300';
-      case 'En revisión': return 'bg-blue-100 text-blue-700 border-blue-300';
-      case 'Pendiente': return 'bg-orange-100 text-orange-700 border-orange-300';
-      default: return '';
+      case 'Pendiente': 
+        return 'border-[#f97316] text-[#f97316] bg-transparent shadow-[0_0_8px_rgba(249,115,22,0.3)]';
+      case 'Aprobado': 
+        return 'border-[#10b981] text-[#10b981] bg-transparent shadow-[0_0_8px_rgba(16,185,129,0.3)]';
+      case 'En revisión': 
+        return 'border-[#3b82f6] text-[#3b82f6] bg-transparent shadow-[0_0_8px_rgba(59,130,246,0.3)]';
+      default: 
+        return 'border-gray-400 text-gray-400 bg-transparent';
     }
   };
 
@@ -120,11 +115,12 @@ export const PlanosPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background dark p-8">
-      <div className="max-w-[1600px] mx-auto">
-        <h1 className="text-3xl font-bold text-foreground dark:text-gray-100 mb-6">
-          Planos (Listado y Cargas)
-        </h1>
+    <DashboardLayout>
+      <div className="p-8">
+        <div className="max-w-[1600px] mx-auto">
+          <h1 className="text-3xl font-bold text-foreground dark:text-gray-100 mb-6">
+            Planos (Listado y Cargas)
+          </h1>
 
         <Tabs defaultValue="listado" className="w-full">
           <TabsList className="mb-6 bg-muted/50">
@@ -217,9 +213,10 @@ export const PlanosPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="v1">v1</SelectItem>
-                      <SelectItem value="v2">v2</SelectItem>
-                      <SelectItem value="v3">v3</SelectItem>
+                      <SelectItem value="1">v1</SelectItem>
+                      <SelectItem value="2">v2</SelectItem>
+                      <SelectItem value="3">v3</SelectItem>
+                      <SelectItem value="4">v4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -237,10 +234,9 @@ export const PlanosPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Actual">Actual</SelectItem>
                       <SelectItem value="Pendiente">Pendiente</SelectItem>
+                      <SelectItem value="Aprobado">Aprobado</SelectItem>
                       <SelectItem value="En revisión">En revisión</SelectItem>
-                      <SelectItem value="Clasificado">Clasificado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -354,41 +350,54 @@ export const PlanosPage = () => {
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
-                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.version}</TableCell>
                         <TableCell>
-                          <Badge 
-                            variant={getEstadoBadgeVariant(plano.estado)}
-                            className={cn("font-medium", getEstadoBadgeColor(plano.estado))}
-                          >
-                            {plano.estado}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
+                            {plano.isActual && (
+                              <Badge 
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
+                              >
+                                Actual
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant="outline"
+                              className={cn("font-medium border-2", getEstadoNeonStyle(plano.estado))}
+                            >
+                              {plano.estado}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">
                           {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
+                          <div className="flex items-center justify-center gap-3">
+                            <button
                               onClick={() => handleDownload(plano)}
-                              className="h-8 text-xs"
+                              className="p-2 hover:bg-green-500/10 rounded-md transition-colors group"
+                              title="Descargar"
                             >
-                              DESCARGAR
-                            </Button>
+                              <Download className="w-4 h-4 text-green-600 group-hover:text-green-500" />
+                            </button>
                             <button
                               onClick={() => handlePreview(plano)}
-                              className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
+                              className="p-2 hover:bg-blue-500/10 rounded-md transition-colors group"
                               title="Vista previa"
                             >
-                              <Eye className="w-4 h-4 text-foreground dark:text-gray-300" />
+                              <Eye className="w-4 h-4 text-blue-600 group-hover:text-blue-500" />
                             </button>
                             <button
                               onClick={() => handleHistory(plano)}
-                              className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
+                              className="p-2 hover:bg-orange-500/10 rounded-md transition-colors group"
                               title="Historial"
                             >
-                              <History className="w-4 h-4 text-foreground dark:text-gray-300" />
+                              <History className="w-4 h-4 text-orange-600 group-hover:text-orange-500" />
                             </button>
                           </div>
                         </TableCell>
@@ -423,23 +432,24 @@ export const PlanosPage = () => {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
 
-      {/* Preview Modal */}
-      <Dialog open={!!previewPlano} onOpenChange={() => setPreviewPlano(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              Vista previa: {previewPlano?.nombre} ({previewPlano?.codigo})
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center h-[500px] bg-muted dark:bg-slate-700 rounded-lg">
-            <p className="text-muted-foreground dark:text-gray-400">
-              Aquí se mostrará el plano en vista previa
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Preview Modal */}
+        <Dialog open={!!previewPlano} onOpenChange={() => setPreviewPlano(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>
+                Vista previa: {previewPlano?.nombre} ({previewPlano?.codigo})
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center h-[500px] bg-muted dark:bg-slate-700 rounded-lg">
+              <p className="text-muted-foreground dark:text-gray-400">
+                Aquí se mostrará el plano en vista previa
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 };
