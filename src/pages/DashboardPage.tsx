@@ -115,11 +115,18 @@ export const DashboardPage = () => {
   const userInitials = getInitials(currentUser);
 
   const menuItems = [
-    { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { id: "planos", icon: Layers, label: "Planos (Listado y Cargas)" },
-    { id: "revisiones", icon: FileCheck, label: "Revisiones" },
-    { id: "usuarios", icon: Users, label: "Usuarios y Roles" }
+    { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { id: "planos", icon: Layers, label: "Planos (Listado y Cargas)", path: "/planos" },
+    { id: "revisiones", icon: FileCheck, label: "Revisiones", path: "#" },
+    { id: "usuarios", icon: Users, label: "Usuarios y Roles", path: "#" }
   ];
+
+  const handleMenuClick = (itemId: string, path: string) => {
+    setActiveRoute(itemId);
+    if (path !== "#") {
+      navigate(path);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background dark flex w-full overflow-hidden">
@@ -139,7 +146,7 @@ export const DashboardPage = () => {
           {menuItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveRoute(item.id)}
+              onClick={() => handleMenuClick(item.id, item.path)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left ${
                 activeRoute === item.id
                   ? "bg-primary/10 dark:bg-red-500/10 text-primary dark:text-red-400 border border-primary/20 dark:border-red-500/20"
