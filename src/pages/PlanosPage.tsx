@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Eye, Pencil, Calendar } from "lucide-react";
+import { Download, Eye, History, Search, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -19,12 +19,12 @@ const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => ({
   id: i + 1,
   codigo: `PL-${String(i + 1).padStart(4, '0')}`,
   nombre: `Plano ${i + 1}`,
-  zona: ['Zona A', 'Zona B', 'Zona C'][i % 3],
-  subzona: ['Subzona 1', 'Subzona 2', 'Subzona 3'][i % 3],
-  sistema: ['Sistema Eléctrico', 'Sistema Hidráulico', 'Sistema Mecánico'][i % 3],
-  version: `v${Math.floor(i / 10) + 1}.${i % 10}`,
-  estado: ['Activo', 'Revisión', 'Aprobado', 'Obsoleto'][i % 4],
-  actualizado: new Date(2025, 0, (i % 28) + 1).toISOString(),
+  zona: ['Laminados', 'Fundición', 'Galvanizado'][i % 3],
+  subzona: ['Zona A', 'Zona B', 'Zona C'][i % 3],
+  sistema: ['Eléctrico', 'Hidráulico', 'Estructuras'][i % 3],
+  version: `v${(i % 3) + 1}`,
+  estado: ['Actual', 'Pendiente', 'En revisión', 'Clasificado'][i % 4],
+  actualizado: new Date(2025, Math.floor(i / 10), (i % 28) + 1).toISOString(),
 }));
 
 type Plano = typeof MOCK_PLANOS[0];
@@ -87,13 +87,23 @@ export const PlanosPage = () => {
     }
   }, [visibleCount, filteredPlanos.length]);
 
-  const getEstadoBadgeVariant = (estado: string) => {
+  const getEstadoBadgeVariant = (estado: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (estado) {
-      case 'Activo': return 'default';
-      case 'Aprobado': return 'default';
-      case 'Revisión': return 'secondary';
-      case 'Obsoleto': return 'destructive';
+      case 'Actual': return 'default';
+      case 'Clasificado': return 'default';
+      case 'En revisión': return 'secondary';
+      case 'Pendiente': return 'destructive';
       default: return 'outline';
+    }
+  };
+
+  const getEstadoBadgeColor = (estado: string) => {
+    switch (estado) {
+      case 'Actual': return 'bg-green-100 text-green-700 border-green-300';
+      case 'Clasificado': return 'bg-green-100 text-green-700 border-green-300';
+      case 'En revisión': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'Pendiente': return 'bg-orange-100 text-orange-700 border-orange-300';
+      default: return '';
     }
   };
 
@@ -105,99 +115,210 @@ export const PlanosPage = () => {
     setPreviewPlano(plano);
   };
 
-  const handleEdit = (plano: Plano) => {
-    console.log('Editando:', plano.codigo);
+  const handleHistory = (plano: Plano) => {
+    console.log('Historial:', plano.codigo);
   };
 
   return (
     <div className="min-h-screen bg-background dark p-8">
-      <div className="max-w-[1400px] mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <h1 className="text-3xl font-bold text-foreground dark:text-gray-100 mb-6">
           Planos (Listado y Cargas)
         </h1>
 
         <Tabs defaultValue="listado" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="listado">Listado</TabsTrigger>
-            <TabsTrigger value="cargas">Cargas</TabsTrigger>
+          <TabsList className="mb-6 bg-muted/50">
+            <TabsTrigger value="listado" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Listado
+            </TabsTrigger>
+            <TabsTrigger value="cargas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Cargas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="listado" className="space-y-6">
             {/* Filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 bg-card dark:bg-slate-800 p-4 rounded-lg border border-border dark:border-slate-700">
-              <Input
-                placeholder="Nombre o código (PL-0001)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="md:col-span-2"
-              />
+            <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-4">
+              {/* Primera fila de filtros */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="md:col-span-1">
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Buscar
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Nombre o código (PL-0001)"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
 
-              <Select value={zonaFilter} onValueChange={setZonaFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Zona" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="Zona A">Zona A</SelectItem>
-                  <SelectItem value="Zona B">Zona B</SelectItem>
-                  <SelectItem value="Zona C">Zona C</SelectItem>
-                </SelectContent>
-              </Select>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Zona
+                  </label>
+                  <Select value={zonaFilter} onValueChange={setZonaFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="Laminados">Laminados</SelectItem>
+                      <SelectItem value="Fundición">Fundición</SelectItem>
+                      <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Subzona" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="Subzona 1">Subzona 1</SelectItem>
-                  <SelectItem value="Subzona 2">Subzona 2</SelectItem>
-                  <SelectItem value="Subzona 3">Subzona 3</SelectItem>
-                </SelectContent>
-              </Select>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Subzona
+                  </label>
+                  <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="Zona A">Zona A</SelectItem>
+                      <SelectItem value="Zona B">Zona B</SelectItem>
+                      <SelectItem value="Zona C">Zona C</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sistema" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="Sistema Eléctrico">Sistema Eléctrico</SelectItem>
-                  <SelectItem value="Sistema Hidráulico">Sistema Hidráulico</SelectItem>
-                  <SelectItem value="Sistema Mecánico">Sistema Mecánico</SelectItem>
-                </SelectContent>
-              </Select>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Sistema
+                  </label>
+                  <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                      <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                      <SelectItem value="Estructuras">Estructuras</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Select value={versionFilter} onValueChange={setVersionFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Versión" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="v1.0">v1.0</SelectItem>
-                  <SelectItem value="v2.0">v2.0</SelectItem>
-                  <SelectItem value="v3.0">v3.0</SelectItem>
-                </SelectContent>
-              </Select>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Versión
+                  </label>
+                  <Select value={versionFilter} onValueChange={setVersionFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="v1">v1</SelectItem>
+                      <SelectItem value="v2">v2</SelectItem>
+                      <SelectItem value="v3">v3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-              <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="Activo">Activo</SelectItem>
-                  <SelectItem value="Revisión">Revisión</SelectItem>
-                  <SelectItem value="Aprobado">Aprobado</SelectItem>
-                  <SelectItem value="Obsoleto">Obsoleto</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Segunda fila: Estado y Rango de fechas */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Estado
+                  </label>
+                  <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="Actual">Actual</SelectItem>
+                      <SelectItem value="Pendiente">Pendiente</SelectItem>
+                      <SelectItem value="En revisión">En revisión</SelectItem>
+                      <SelectItem value="Clasificado">Clasificado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Fecha desde
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateFrom && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={dateFrom}
+                        onSelect={setDateFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Fecha hasta
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateTo && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={setDateTo}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <Button 
+                  className="bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    setVisibleCount(20);
+                  }}
+                >
+                  FILTRAR
+                </Button>
+              </div>
             </div>
 
             {/* Encabezado de resultados */}
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground dark:text-gray-100">
+              <p className="text-base font-semibold text-foreground dark:text-gray-100">
                 Resultados ({filteredPlanos.length})
+              </p>
+              <p className="text-xs text-muted-foreground dark:text-gray-400">
+                Demo - datos mock
               </p>
             </div>
 
@@ -205,79 +326,86 @@ export const PlanosPage = () => {
             <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700">
               <ScrollArea ref={scrollRef} className="h-[600px]">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="bg-muted/50 dark:bg-slate-700/50">
                     <TableRow>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Zona</TableHead>
-                      <TableHead>Subzona</TableHead>
-                      <TableHead>Sistema</TableHead>
-                      <TableHead>Versión</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Actualizado</TableHead>
-                      <TableHead className="text-center">Descargar</TableHead>
-                      <TableHead className="text-center">Vista previa</TableHead>
-                      <TableHead className="text-center">Acciones</TableHead>
+                      <TableHead className="font-semibold">Plano</TableHead>
+                      <TableHead className="font-semibold">Zona</TableHead>
+                      <TableHead className="font-semibold">Subzona</TableHead>
+                      <TableHead className="font-semibold">Sistema</TableHead>
+                      <TableHead className="font-semibold">Versión</TableHead>
+                      <TableHead className="font-semibold">Estado</TableHead>
+                      <TableHead className="font-semibold">Actualizado</TableHead>
+                      <TableHead className="font-semibold text-center">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {visiblePlanos.map((plano) => (
-                      <TableRow key={plano.id}>
+                      <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
                         <TableCell>
                           <div>
-                            <div className="font-medium text-foreground dark:text-gray-100">
+                            <div className="font-semibold text-foreground dark:text-gray-100">
                               {plano.nombre}
                             </div>
-                            <div className="text-xs text-muted-foreground dark:text-gray-400">
+                            <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
                               {plano.codigo}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-foreground dark:text-gray-200">{plano.zona}</TableCell>
-                        <TableCell className="text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
-                        <TableCell className="text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
-                        <TableCell className="text-foreground dark:text-gray-200">{plano.version}</TableCell>
+                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
+                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
+                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
+                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.version}</TableCell>
                         <TableCell>
-                          <Badge variant={getEstadoBadgeVariant(plano.estado)}>
+                          <Badge 
+                            variant={getEstadoBadgeVariant(plano.estado)}
+                            className={cn("font-medium", getEstadoBadgeColor(plano.estado))}
+                          >
                             {plano.estado}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-foreground dark:text-gray-200">
-                          {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}
+                        <TableCell className="text-sm text-foreground dark:text-gray-200">
+                          {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
                         </TableCell>
-                        <TableCell className="text-center">
-                          <button
-                            onClick={() => handleDownload(plano)}
-                            className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
-                            title="Descargar"
-                          >
-                            <Download className="w-4 h-4 text-foreground dark:text-gray-300" />
-                          </button>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <button
-                            onClick={() => handlePreview(plano)}
-                            className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
-                            title="Vista previa"
-                          >
-                            <Eye className="w-4 h-4 text-foreground dark:text-gray-300" />
-                          </button>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <button
-                            onClick={() => handleEdit(plano)}
-                            className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
-                            title="Editar"
-                          >
-                            <Pencil className="w-4 h-4 text-foreground dark:text-gray-300" />
-                          </button>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownload(plano)}
+                              className="h-8 text-xs"
+                            >
+                              DESCARGAR
+                            </Button>
+                            <button
+                              onClick={() => handlePreview(plano)}
+                              className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
+                              title="Vista previa"
+                            >
+                              <Eye className="w-4 h-4 text-foreground dark:text-gray-300" />
+                            </button>
+                            <button
+                              onClick={() => handleHistory(plano)}
+                              className="p-2 hover:bg-muted dark:hover:bg-slate-700 rounded-md transition-colors"
+                              title="Historial"
+                            >
+                              <History className="w-4 h-4 text-foreground dark:text-gray-300" />
+                            </button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 {visibleCount >= filteredPlanos.length && filteredPlanos.length > 0 && (
-                  <div className="text-center py-4 text-sm text-muted-foreground dark:text-gray-400">
+                  <div className="text-center py-4 text-sm text-muted-foreground dark:text-gray-400 border-t border-border dark:border-slate-700">
                     No hay más resultados
+                  </div>
+                )}
+                {filteredPlanos.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground dark:text-gray-400">
+                      No se encontraron planos con los filtros seleccionados
+                    </p>
                   </div>
                 )}
               </ScrollArea>
