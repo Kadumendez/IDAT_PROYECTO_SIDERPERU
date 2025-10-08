@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Eye, Pencil, Search, Calendar as CalendarIcon } from "lucide-react";
+import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -20,6 +20,7 @@ const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => ({
   id: i + 1,
   codigo: `PL-${String(i + 1).padStart(4, '0')}`,
   nombre: `Plano ${i + 1}`,
+  empresaResponsable: ['Constructora ABC', 'Ingeniería XYZ', 'Grupo Industrial'][i % 3],
   zona: ['Laminados', 'Fundición', 'Galvanizado'][i % 3],
   subzona: ['Zona A', 'Zona B', 'Zona C'][i % 3],
   sistema: ['Eléctrico', 'Hidráulico', 'Estructuras'][i % 3],
@@ -43,6 +44,19 @@ export const PlanosPage = () => {
   const [visibleCount, setVisibleCount] = useState(15);
   const [previewPlano, setPreviewPlano] = useState<Plano | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Cargas tab state
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedPlanos, setUploadedPlanos] = useState<any[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
+  const [uploadFormData, setUploadFormData] = useState({
+    zona: "",
+    subzona: "",
+    sistema: "",
+    unidadMedida: ""
+  });
 
   // Filter planos
   const filteredPlanos = MOCK_PLANOS.filter((plano) => {
@@ -119,6 +133,92 @@ export const PlanosPage = () => {
     console.log('Editar:', plano.codigo);
   };
 
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setZonaFilter("");
+    setSubzonaFilter("");
+    setSistemaFilter("");
+    setVersionFilter("");
+    setEstadoFilter("");
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
+
+  // Cargas tab handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && (file.type === 'application/pdf' || file.name.endsWith('.dwg'))) {
+      setUploadedFile(file);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+    }
+  };
+
+  const handlePreviewFile = () => {
+    if (uploadedFile && uploadedFile.type === 'application/pdf') {
+      const url = URL.createObjectURL(uploadedFile);
+      setPreviewFile(url);
+    }
+  };
+
+  const handleClearFile = () => {
+    setUploadedFile(null);
+    setPreviewFile(null);
+  };
+
+  const handleAddFile = () => {
+    if (uploadedFile) {
+      setShowUploadForm(true);
+    }
+  };
+
+  const handleSaveUpload = () => {
+    if (uploadedFile && uploadFormData.zona && uploadFormData.subzona && uploadFormData.sistema && uploadFormData.unidadMedida) {
+      const newPlano = {
+        id: uploadedPlanos.length + 1,
+        codigo: `PL-${String(uploadedPlanos.length + 1).padStart(4, '0')}`,
+        nombre: uploadedFile.name,
+        empresaResponsable: 'Mi Empresa',
+        zona: uploadFormData.zona,
+        subzona: uploadFormData.subzona,
+        sistema: uploadFormData.sistema,
+        unidadMedida: uploadFormData.unidadMedida,
+        version: 1,
+        isActual: true,
+        estado: 'Pendiente',
+        actualizado: new Date().toISOString(),
+        file: uploadedFile
+      };
+      setUploadedPlanos([...uploadedPlanos, newPlano]);
+      setShowUploadForm(false);
+      setUploadedFile(null);
+      setUploadFormData({ zona: "", subzona: "", sistema: "", unidadMedida: "" });
+      // Show success toast (you can implement this with your toast system)
+      console.log('✓ Archivo subido exitosamente');
+    }
+  };
+
+  const handleCancelUpload = () => {
+    setShowUploadForm(false);
+    setUploadFormData({ zona: "", subzona: "", sistema: "", unidadMedida: "" });
+  };
+
   return (
     <DashboardLayout pageTitle="Planos (Listado y Cargas)">
       <div className="p-8">
@@ -138,8 +238,8 @@ export const PlanosPage = () => {
             {/* Filtros */}
             <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-4">
               {/* Primera fila de filtros */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="md:col-span-1">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div className="md:col-span-2">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Buscar
                   </label>
@@ -154,7 +254,7 @@ export const PlanosPage = () => {
                   </div>
                 </div>
 
-                <div>
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Zona
                   </label>
@@ -162,7 +262,7 @@ export const PlanosPage = () => {
                     <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-[100]">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="Laminados">Laminados</SelectItem>
                       <SelectItem value="Fundición">Fundición</SelectItem>
@@ -171,7 +271,7 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Subzona
                   </label>
@@ -179,7 +279,7 @@ export const PlanosPage = () => {
                     <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-[100]">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="Zona A">Zona A</SelectItem>
                       <SelectItem value="Zona B">Zona B</SelectItem>
@@ -188,7 +288,7 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Sistema
                   </label>
@@ -196,7 +296,7 @@ export const PlanosPage = () => {
                     <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-[100]">
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="Eléctrico">Eléctrico</SelectItem>
                       <SelectItem value="Hidráulico">Hidráulico</SelectItem>
@@ -205,7 +305,7 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Versión
                   </label>
@@ -213,7 +313,7 @@ export const PlanosPage = () => {
                     <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-[100]">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="1">v1</SelectItem>
                       <SelectItem value="2">v2</SelectItem>
@@ -225,8 +325,8 @@ export const PlanosPage = () => {
               </div>
 
               {/* Segunda fila: Estado y Rango de fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Estado
                   </label>
@@ -234,7 +334,7 @@ export const PlanosPage = () => {
                     <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
-                    <SelectContent className="z-50">
+                    <SelectContent className="z-[100]">
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="Pendiente">Pendiente</SelectItem>
                       <SelectItem value="Aprobado">Aprobado</SelectItem>
@@ -243,7 +343,7 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Fecha desde
                   </label>
@@ -252,7 +352,7 @@ export const PlanosPage = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal text-foreground dark:text-gray-200",
                           !dateFrom && "text-muted-foreground"
                         )}
                       >
@@ -260,7 +360,7 @@ export const PlanosPage = () => {
                         {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                    <PopoverContent className="w-auto p-0 z-[100]" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={dateFrom}
@@ -271,7 +371,7 @@ export const PlanosPage = () => {
                   </Popover>
                 </div>
 
-                <div>
+                <div className="md:col-span-1">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Fecha hasta
                   </label>
@@ -280,7 +380,7 @@ export const PlanosPage = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal text-foreground dark:text-gray-200",
                           !dateTo && "text-muted-foreground"
                         )}
                       >
@@ -288,7 +388,7 @@ export const PlanosPage = () => {
                         {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                    <PopoverContent className="w-auto p-0 z-[100]" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={dateTo}
@@ -297,6 +397,17 @@ export const PlanosPage = () => {
                       />
                     </PopoverContent>
                   </Popover>
+                </div>
+
+                <div className="md:col-span-1 flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={clearAllFilters}
+                    className="w-full"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Limpiar Filtros
+                  </Button>
                 </div>
               </div>
             </div>
@@ -318,6 +429,7 @@ export const PlanosPage = () => {
                   <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
                     <TableRow>
                       <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
+                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Empresa Responsable</TableHead>
                       <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
                       <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
                       <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
@@ -340,6 +452,7 @@ export const PlanosPage = () => {
                             </div>
                           </div>
                         </TableCell>
+                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
@@ -373,24 +486,24 @@ export const PlanosPage = () => {
                           <div className="flex items-center justify-center gap-3">
                             <button
                               onClick={() => handleDownload(plano)}
-                              className="p-2 hover:bg-primary/10 rounded-md transition-colors group"
+                              className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
                               title="Descargar"
                             >
-                              <Download className="w-4 h-4 text-primary group-hover:text-primary/80" />
+                              <Download className="w-4 h-4 text-white group-hover:text-white/80" />
                             </button>
                             <button
                               onClick={() => handlePreview(plano)}
-                              className="p-2 hover:bg-primary/10 rounded-md transition-colors group"
+                              className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
                               title="Vista previa"
                             >
-                              <Eye className="w-4 h-4 text-primary group-hover:text-primary/80" />
+                              <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
                             </button>
                             <button
                               onClick={() => handleEdit(plano)}
-                              className="p-2 hover:bg-primary/10 rounded-md transition-colors group"
+                              className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
                               title="Editar"
                             >
-                              <Pencil className="w-4 h-4 text-primary group-hover:text-primary/80" />
+                              <Pencil className="w-4 h-4 text-white group-hover:text-white/80" />
                             </button>
                           </div>
                         </TableCell>
@@ -414,19 +527,159 @@ export const PlanosPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="cargas">
-            <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 p-12 text-center">
-              <h3 className="text-xl font-semibold text-foreground dark:text-gray-100 mb-2">
-                Cargas de Planos
-              </h3>
-              <p className="text-muted-foreground dark:text-gray-400">
-                Esta sección estará disponible próximamente
-              </p>
+          <TabsContent value="cargas" className="space-y-6">
+            {/* Drag and Drop Zone */}
+            <div 
+              className={cn(
+                "bg-card dark:bg-slate-800 rounded-lg border-2 border-dashed p-8 transition-colors",
+                isDragging ? "border-primary bg-primary/5" : "border-border dark:border-slate-700"
+              )}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-gray-100 mb-2">
+                    Planos
+                  </h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
+                    Arrastre su archivo DWG/PDF aquí o usa "Subir DWG/PDF" del TopBar
+                  </p>
+                  {uploadedFile && (
+                    <div className="flex items-center gap-2 mt-4">
+                      <FileText className="w-5 h-5 text-primary" />
+                      <span className="text-sm font-medium text-foreground dark:text-gray-200">
+                        {uploadedFile.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground dark:text-gray-400 uppercase">
+                        ({uploadedFile.type === 'application/pdf' ? 'PDF' : 'DWG'})
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviewFile}
+                    disabled={!uploadedFile || uploadedFile.type !== 'application/pdf'}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Vista previa
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleAddFile}
+                    disabled={!uploadedFile}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFile}
+                    disabled={!uploadedFile}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Limpiar
+                  </Button>
+                </div>
+              </div>
             </div>
+
+            {/* Uploaded Files Table */}
+            {uploadedPlanos.length > 0 && (
+              <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
+                <ScrollArea className="h-[400px] custom-scrollbar">
+                  <Table>
+                    <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
+                      <TableRow>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Empresa Responsable</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
+                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
+                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Actualizado</TableHead>
+                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {uploadedPlanos.map((plano) => (
+                        <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
+                          <TableCell>
+                            <div>
+                              <div className="font-semibold text-foreground dark:text-gray-100">
+                                {plano.nombre}
+                              </div>
+                              <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
+                                {plano.codigo}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
+                              {plano.isActual && (
+                                <Badge 
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
+                                >
+                                  Actual
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center">
+                              <Badge 
+                                variant="outline"
+                                className={cn("font-medium border-2", getEstadoNeonStyle(plano.estado))}
+                              >
+                                {plano.estado}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">
+                            {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => handleDownload(plano)}
+                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                title="Descargar"
+                              >
+                                <Download className="w-4 h-4 text-white group-hover:text-white/80" />
+                              </button>
+                              <button
+                                onClick={() => handlePreview(plano)}
+                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                title="Vista previa"
+                              >
+                                <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
+                              </button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
-        {/* Preview Modal */}
+        {/* Preview Modal for Listado */}
         <Dialog open={!!previewPlano} onOpenChange={() => setPreviewPlano(null)}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
@@ -438,6 +691,122 @@ export const PlanosPage = () => {
               <p className="text-muted-foreground dark:text-gray-400">
                 Aquí se mostrará el plano en vista previa
               </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Preview Modal for PDF Files */}
+        <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
+          <DialogContent className="max-w-6xl h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Vista previa: {uploadedFile?.name}</DialogTitle>
+            </DialogHeader>
+            {previewFile && (
+              <iframe
+                src={previewFile}
+                className="w-full h-full rounded-lg"
+                title="PDF Preview"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Upload Form Modal */}
+        <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Cargar Plano</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                  Zona
+                </label>
+                <Select value={uploadFormData.zona} onValueChange={(value) => setUploadFormData({...uploadFormData, zona: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar zona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Laminados">Laminados</SelectItem>
+                    <SelectItem value="Fundición">Fundición</SelectItem>
+                    <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                  Subzona
+                </label>
+                <Select value={uploadFormData.subzona} onValueChange={(value) => setUploadFormData({...uploadFormData, subzona: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar subzona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Zona A">Zona A</SelectItem>
+                    <SelectItem value="Zona B">Zona B</SelectItem>
+                    <SelectItem value="Zona C">Zona C</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                  Sistema
+                </label>
+                <Select value={uploadFormData.sistema} onValueChange={(value) => setUploadFormData({...uploadFormData, sistema: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar sistema" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                    <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                    <SelectItem value="Estructuras">Estructuras</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                  Unidades de Medida
+                </label>
+                <Select value={uploadFormData.unidadMedida} onValueChange={(value) => setUploadFormData({...uploadFormData, unidadMedida: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar unidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Milímetros">Milímetros</SelectItem>
+                    <SelectItem value="Pulgadas">Pulgadas</SelectItem>
+                    <SelectItem value="Pies">Pies</SelectItem>
+                    <SelectItem value="Mixto">Mixto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  <strong>Nota:</strong> Al guardar el archivo, este pasa automáticamente a un estado de "Pendiente de aprobación".
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelUpload}
+                  className="flex-1"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveUpload}
+                  className="flex-1"
+                  disabled={!uploadFormData.zona || !uploadFormData.subzona || !uploadFormData.sistema || !uploadFormData.unidadMedida}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
