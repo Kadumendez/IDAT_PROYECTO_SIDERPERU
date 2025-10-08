@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { logout, getCurrentUser } from "@/lib/auth";
 import { showToast } from "@/components/Toast";
@@ -21,9 +21,10 @@ import {
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  pageTitle?: string;
 }
 
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentUser = getCurrentUser() || "";
@@ -31,6 +32,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [isAIChatMinimized, setIsAIChatMinimized] = useState(false);
+  const chatInputRef = useRef<HTMLInputElement>(null);
 
   // Determine active route from current path
   const getActiveRoute = () => {
@@ -76,6 +78,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showUserMenu]);
+
+  // Auto-focus chat input when opened
+  useEffect(() => {
+    if (showAIChat && !isAIChatMinimized && chatInputRef.current) {
+      setTimeout(() => chatInputRef.current?.focus(), 100);
+    }
+  }, [showAIChat, isAIChatMinimized]);
 
   const handleLogout = () => {
     logout();
@@ -143,9 +152,16 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col ml-64">
         {/* Header - Fixed */}
-        <header className="bg-card dark:bg-slate-900 border-b border-border dark:border-slate-800 px-8 py-4 flex items-center justify-end fixed top-0 right-0 left-64 z-30">
+        <header className="bg-card dark:bg-slate-900 border-b border-border dark:border-slate-800 px-8 py-4 flex items-center justify-between fixed top-0 right-0 left-64 z-30">
+          {/* Page Title */}
+          {pageTitle && (
+            <h1 className="text-2xl font-bold text-foreground dark:text-gray-100">
+              {pageTitle}
+            </h1>
+          )}
+          
           {/* Right side user info with buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             {/* Consultor IA - Yellow/Amber style */}
             <button
               onClick={() => setShowAIChat(!showAIChat)}
@@ -266,6 +282,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="p-4 border-t border-border dark:border-slate-700">
             <div className="flex gap-2">
               <input
+                ref={chatInputRef}
                 type="text"
                 placeholder="Escribe tu mensaje..."
                 className="flex-1 px-4 py-2 rounded-xl border border-border dark:border-slate-600 bg-background dark:bg-slate-900 text-foreground dark:text-gray-100 placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Eye, History, Search, Calendar as CalendarIcon } from "lucide-react";
+import { Download, Eye, Pencil, Search, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -40,7 +40,7 @@ export const PlanosPage = () => {
   const [estadoFilter, setEstadoFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [visibleCount, setVisibleCount] = useState(15);
   const [previewPlano, setPreviewPlano] = useState<Plano | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +68,11 @@ export const PlanosPage = () => {
 
   const visiblePlanos = filteredPlanos.slice(0, visibleCount);
 
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(15);
+  }, [searchTerm, zonaFilter, subzonaFilter, sistemaFilter, versionFilter, estadoFilter, dateFrom, dateTo]);
+
   // Infinite scroll handler
   useEffect(() => {
     const handleScroll = (e: Event) => {
@@ -77,7 +82,7 @@ export const PlanosPage = () => {
       const { scrollTop, scrollHeight, clientHeight } = target;
       if (scrollHeight - scrollTop <= clientHeight + 50) {
         if (visibleCount < filteredPlanos.length) {
-          setVisibleCount(prev => Math.min(prev + 20, filteredPlanos.length));
+          setVisibleCount(prev => Math.min(prev + 15, filteredPlanos.length));
         }
       }
     };
@@ -110,17 +115,14 @@ export const PlanosPage = () => {
     setPreviewPlano(plano);
   };
 
-  const handleHistory = (plano: Plano) => {
-    console.log('Historial:', plano.codigo);
+  const handleEdit = (plano: Plano) => {
+    console.log('Editar:', plano.codigo);
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout pageTitle="Planos (Listado y Cargas)">
       <div className="p-8">
         <div className="max-w-[1600px] mx-auto">
-          <h1 className="text-3xl font-bold text-foreground dark:text-gray-100 mb-6">
-            Planos (Listado y Cargas)
-          </h1>
 
         <Tabs defaultValue="listado" className="w-full">
           <TabsList className="mb-6 bg-muted/50">
@@ -157,10 +159,10 @@ export const PlanosPage = () => {
                     Zona
                   </label>
                   <Select value={zonaFilter} onValueChange={setZonaFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="Laminados">Laminados</SelectItem>
                       <SelectItem value="Fundición">Fundición</SelectItem>
@@ -174,10 +176,10 @@ export const PlanosPage = () => {
                     Subzona
                   </label>
                   <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="Zona A">Zona A</SelectItem>
                       <SelectItem value="Zona B">Zona B</SelectItem>
@@ -191,10 +193,10 @@ export const PlanosPage = () => {
                     Sistema
                   </label>
                   <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas" />
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                      <SelectValue placeholder="Todos" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50">
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="Eléctrico">Eléctrico</SelectItem>
                       <SelectItem value="Hidráulico">Hidráulico</SelectItem>
@@ -208,10 +210,10 @@ export const PlanosPage = () => {
                     Versión
                   </label>
                   <Select value={versionFilter} onValueChange={setVersionFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="1">v1</SelectItem>
                       <SelectItem value="2">v2</SelectItem>
@@ -223,16 +225,16 @@ export const PlanosPage = () => {
               </div>
 
               {/* Segunda fila: Estado y Rango de fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Estado
                   </label>
                   <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50">
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="Pendiente">Pendiente</SelectItem>
                       <SelectItem value="Aprobado">Aprobado</SelectItem>
@@ -258,7 +260,7 @@ export const PlanosPage = () => {
                         {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={dateFrom}
@@ -286,7 +288,7 @@ export const PlanosPage = () => {
                         {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={dateTo}
@@ -296,15 +298,6 @@ export const PlanosPage = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-
-                <Button 
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => {
-                    setVisibleCount(20);
-                  }}
-                >
-                  FILTRAR
-                </Button>
               </div>
             </div>
 
@@ -319,19 +312,19 @@ export const PlanosPage = () => {
             </div>
 
             {/* Tabla */}
-            <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700">
-              <ScrollArea ref={scrollRef} className="h-[600px]">
+            <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
+              <ScrollArea ref={scrollRef} className="h-[600px] custom-scrollbar">
                 <Table>
-                  <TableHeader className="bg-muted/50 dark:bg-slate-700/50">
+                  <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
                     <TableRow>
-                      <TableHead className="font-semibold">Plano</TableHead>
-                      <TableHead className="font-semibold">Zona</TableHead>
-                      <TableHead className="font-semibold">Subzona</TableHead>
-                      <TableHead className="font-semibold">Sistema</TableHead>
-                      <TableHead className="font-semibold">Versión</TableHead>
-                      <TableHead className="font-semibold">Estado</TableHead>
-                      <TableHead className="font-semibold">Actualizado</TableHead>
-                      <TableHead className="font-semibold text-center">Acciones</TableHead>
+                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
+                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
+                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
+                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
+                      <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
+                      <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
+                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Actualizado</TableHead>
+                      <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -351,7 +344,7 @@ export const PlanosPage = () => {
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
                         <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
                             {plano.isActual && (
                               <Badge 
@@ -380,24 +373,24 @@ export const PlanosPage = () => {
                           <div className="flex items-center justify-center gap-3">
                             <button
                               onClick={() => handleDownload(plano)}
-                              className="p-2 hover:bg-green-500/10 rounded-md transition-colors group"
+                              className="p-2 hover:bg-primary/10 rounded-md transition-colors group"
                               title="Descargar"
                             >
-                              <Download className="w-4 h-4 text-green-600 group-hover:text-green-500" />
+                              <Download className="w-4 h-4 text-primary group-hover:text-primary/80" />
                             </button>
                             <button
                               onClick={() => handlePreview(plano)}
-                              className="p-2 hover:bg-blue-500/10 rounded-md transition-colors group"
+                              className="p-2 hover:bg-primary/10 rounded-md transition-colors group"
                               title="Vista previa"
                             >
-                              <Eye className="w-4 h-4 text-blue-600 group-hover:text-blue-500" />
+                              <Eye className="w-4 h-4 text-primary group-hover:text-primary/80" />
                             </button>
                             <button
-                              onClick={() => handleHistory(plano)}
-                              className="p-2 hover:bg-orange-500/10 rounded-md transition-colors group"
-                              title="Historial"
+                              onClick={() => handleEdit(plano)}
+                              className="p-2 hover:bg-primary/10 rounded-md transition-colors group"
+                              title="Editar"
                             >
-                              <History className="w-4 h-4 text-orange-600 group-hover:text-orange-500" />
+                              <Pencil className="w-4 h-4 text-primary group-hover:text-primary/80" />
                             </button>
                           </div>
                         </TableCell>

@@ -49,7 +49,7 @@ export const DashboardPage = () => {
   const navigate = useNavigate();
 
   return (
-    <DashboardLayout>
+    <DashboardLayout pageTitle="Dashboard">
       <div className="p-8">
         {/* Metrics Cards */}
         <TooltipProvider delayDuration={0}>
