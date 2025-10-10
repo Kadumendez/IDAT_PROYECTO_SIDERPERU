@@ -105,7 +105,16 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
 
   const menuItems = [
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { id: "planos", icon: Layers, label: "Planos (Listado y Cargas)", path: "/planos" },
+    { 
+      id: "planos", 
+      icon: Layers, 
+      label: "Planos (Listado y Cargas)", 
+      path: "/planos",
+      submenu: [
+        { id: "listado", label: "Listado", path: "/planos?tab=listado" },
+        { id: "cargas", label: "Cargas", path: "/planos?tab=cargas" }
+      ]
+    },
     { id: "revisiones", icon: FileCheck, label: "Revisiones", path: "#" },
     { id: "usuarios", icon: Users, label: "Usuarios y Roles", path: "#" }
   ];
@@ -133,18 +142,36 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
 
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => handleMenuClick(item.id, item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left ${
-                activeRoute === item.id
-                  ? "bg-primary/10 dark:bg-red-500/10 text-primary dark:text-red-400 border border-primary/20 dark:border-red-500/20"
-                  : "text-muted-foreground dark:text-gray-400 hover:bg-muted dark:hover:bg-slate-800"
-              }`}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              <span>{item.label}</span>
-            </button>
+            <div key={item.id}>
+              <button
+                onClick={() => handleMenuClick(item.id, item.path)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left ${
+                  activeRoute === item.id
+                    ? "bg-primary/10 dark:bg-red-500/10 text-primary dark:text-red-400 border border-primary/20 dark:border-red-500/20"
+                    : "text-muted-foreground dark:text-gray-400 hover:bg-muted dark:hover:bg-slate-800"
+                }`}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <span>{item.label}</span>
+              </button>
+              {'submenu' in item && item.submenu && (
+                <div className="ml-8 mt-1 space-y-1">
+                  {item.submenu.map(subItem => (
+                    <button
+                      key={subItem.id}
+                      onClick={() => navigate(subItem.path)}
+                      className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-left ${
+                        location.search.includes(`tab=${subItem.id}`) || (subItem.id === 'listado' && !location.search)
+                          ? "bg-primary/5 dark:bg-red-500/5 text-primary dark:text-red-400"
+                          : "text-muted-foreground dark:text-gray-500 hover:bg-muted/50 dark:hover:bg-slate-800/50"
+                      }`}
+                    >
+                      {subItem.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       </aside>

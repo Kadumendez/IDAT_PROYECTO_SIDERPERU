@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -59,6 +58,11 @@ const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => {
 type Plano = typeof MOCK_PLANOS[0];
 
 export const PlanosPage = () => {
+  // Get active tab from URL or default to listado
+  const location = window.location;
+  const searchParams = new URLSearchParams(location.search);
+  const activeTab = searchParams.get('tab') || 'listado';
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [zonaFilter, setZonaFilter] = useState<string>("");
   const [subzonaFilter, setSubzonaFilter] = useState<string>("");
@@ -389,26 +393,17 @@ export const PlanosPage = () => {
   };
 
   return (
-    <DashboardLayout pageTitle="Planos (Listado y Cargas)">
+    <DashboardLayout pageTitle={activeTab === 'cargas' ? 'Planos - Cargas' : 'Planos - Listado'}>
       <div className="p-8">
         <div className="max-w-[1600px] mx-auto">
 
-        <Tabs defaultValue="listado" className="w-full">
-          <TabsList className="mb-6 bg-muted/50">
-            <TabsTrigger value="listado" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Listado
-            </TabsTrigger>
-            <TabsTrigger value="cargas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Cargas
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="listado" className="space-y-6">
+          {activeTab === 'listado' && (
+            <div className="space-y-6">
             {/* Filtros */}
-            <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-4">
+            <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-5">
               {/* Primera fila de filtros */}
-              <div className="grid grid-cols-8 gap-3">
-                <div className="col-span-2">
+              <div className="grid grid-cols-12 gap-4">
+                <div className="col-span-4">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Buscar
                   </label>
@@ -423,12 +418,12 @@ export const PlanosPage = () => {
                   </div>
                 </div>
 
-                <div>
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Zona
                   </label>
                   <Select value={zonaFilter} onValueChange={setZonaFilter}>
-                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -440,12 +435,12 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Subzona
                   </label>
                   <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
-                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -457,12 +452,12 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Sistema
                   </label>
                   <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
-                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -474,27 +469,12 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Versión
-                  </label>
-                  <Select value={versionFilter} onValueChange={setVersionFilter}>
-                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100]">
-                      <SelectItem value="Todas">Todas</SelectItem>
-                      <SelectItem value="Versión actual">Versión actual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Estado
                   </label>
                   <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -505,8 +485,26 @@ export const PlanosPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
-                <div>
+              {/* Segunda fila de filtros */}
+              <div className="grid grid-cols-12 gap-4">
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                    Versión
+                  </label>
+                  <Select value={versionFilter} onValueChange={setVersionFilter}>
+                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[100]">
+                      <SelectItem value="Todas">Todas</SelectItem>
+                      <SelectItem value="Versión actual">Versión actual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="col-span-3">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Fecha desde
                   </label>
@@ -515,7 +513,7 @@ export const PlanosPage = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-[160px] justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal",
                           !dateFrom && "text-muted-foreground",
                           dateFrom && "text-foreground dark:text-gray-200"
                         )}
@@ -535,7 +533,7 @@ export const PlanosPage = () => {
                   </Popover>
                 </div>
 
-                <div>
+                <div className="col-span-3">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Fecha hasta
                   </label>
@@ -544,7 +542,7 @@ export const PlanosPage = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-[160px] justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal",
                           !dateTo && "text-muted-foreground",
                           dateTo && "text-foreground dark:text-gray-200"
                         )}
@@ -563,19 +561,19 @@ export const PlanosPage = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
+
+                <div className="col-span-4 flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={clearAllFilters}
+                    className="w-full bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Limpiar Filtros
+                  </Button>
+                </div>
               </div>
 
-              {/* Botón de limpiar filtros */}
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={clearAllFilters}
-                  className="bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Limpiar Filtros
-                </Button>
-              </div>
             </div>
 
             {/* Encabezado de resultados */}
@@ -662,8 +660,8 @@ export const PlanosPage = () => {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary cursor-help flex-shrink-0">
-                                    <Info className="h-3 w-3 text-primary" />
+                                  <div className="flex items-center justify-center cursor-help flex-shrink-0">
+                                    <Info className="h-4 w-4 text-white hover:text-white/80 transition-colors" />
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-xs">
@@ -756,9 +754,11 @@ export const PlanosPage = () => {
                 )}
               </ScrollArea>
             </div>
-          </TabsContent>
+            </div>
+          )}
 
-          <TabsContent value="cargas" className="space-y-6">
+          {activeTab === 'cargas' && (
+            <div className="space-y-6">
             {/* Drag and Drop Zone */}
             <div 
               className={cn(
@@ -907,8 +907,8 @@ export const PlanosPage = () => {
                 </ScrollArea>
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+            </div>
+          )}
 
         {/* Preview Modal for Listado */}
         <Dialog open={!!previewPlano} onOpenChange={() => setPreviewPlano(null)}>
@@ -1108,15 +1108,20 @@ export const PlanosPage = () => {
 
         {/* Success Check Animation */}
         <Dialog open={showSuccessCheck} onOpenChange={setShowSuccessCheck}>
-          <DialogContent className="sm:max-w-xs border-0 bg-transparent shadow-none">
-            <div className="flex items-center justify-center">
+          <DialogContent className="sm:max-w-sm border-2 border-green-500/50 bg-card dark:bg-slate-800">
+            <div className="flex flex-col items-center justify-center py-4 space-y-4">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full border-4 border-dashed border-green-500 animate-spin" style={{ animationDuration: '3s' }}></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
-                    <Check className="h-10 w-10 text-green-500" />
-                  </div>
+                <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
+                  <Check className="h-12 w-12 text-green-500 animate-fade-in" />
                 </div>
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
+                  ¡Cambios guardados!
+                </h3>
+                <p className="text-sm text-muted-foreground dark:text-gray-400">
+                  La acción se realizó correctamente
+                </p>
               </div>
             </div>
           </DialogContent>
