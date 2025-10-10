@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit } from "lucide-react";
+import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit, Info, Check, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -17,21 +17,44 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 
-// Mock data - determine if it's the latest version (isActual)
-const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => ({
-  id: i + 1,
-  codigo: `PL-${String(i + 1).padStart(4, '0')}`,
-  nombre: `Plano ${i + 1}`,
-  empresaResponsable: ['Constructora ABC', 'Ingeniería XYZ', 'Grupo Industrial'][i % 3],
-  zona: ['Laminados', 'Fundición', 'Galvanizado'][i % 3],
-  subzona: ['Zona A', 'Zona B', 'Zona C'][i % 3],
-  sistema: ['Eléctrico', 'Hidráulico', 'Estructuras'][i % 3],
-  version: (i % 4) + 1,
-  isActual: i % 4 === 3, // Every 4th item is the latest version
-  estado: ['Pendiente', 'Aprobado', 'En revisión'][i % 3],
-  actualizado: new Date(2025, Math.floor(i / 10), (i % 28) + 1).toISOString(),
-}));
+// Mock data - nombres realistas de planos de siderúrgica
+const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => {
+  const planoNames = [
+    'Planta General Acería',
+    'Circuito Refrigeración Horno',
+    'Sistema Transportador Materias Primas',
+    'Distribución Eléctrica Planta',
+    'Layout Almacén Productos Terminados',
+    'Red Contraincendios Principal',
+    'Sistema Ventilación Industrial',
+    'Estructura Puente Grúa Principal',
+    'Diagrama Unifilar Subestación',
+    'Plano Tubería Agua Proceso'
+  ];
+  const nameIndex = i % planoNames.length;
+  const versionNum = Math.floor(i / planoNames.length) + 1;
+  const isLatestVersion = (i % planoNames.length) === (Math.floor((100 - 1) / planoNames.length));
+  
+  return {
+    id: i + 1,
+    codigo: `PL-${String(i + 1).padStart(4, '0')}`,
+    nombre: planoNames[nameIndex],
+    empresaResponsable: ['Constructora ABC', 'Ingeniería XYZ', 'Grupo Industrial'][i % 3],
+    zona: ['Laminados', 'Fundición', 'Galvanizado'][i % 3],
+    subzona: ['Zona A', 'Zona B', 'Zona C'][i % 3],
+    sistema: ['Eléctrico', 'Hidráulico', 'Estructuras'][i % 3],
+    version: versionNum,
+    isActual: isLatestVersion,
+    estado: ['PENDIENTE', 'APROBADO', 'COMENTADO'][i % 3],
+    actualizado: new Date(2025, Math.floor(i / 10), (i % 28) + 1).toISOString(),
+    fechaSubida: format(new Date(2025, Math.floor(i / 10), (i % 28) + 1), 'yyyy-MM-dd'),
+    aprobadorSiderPeru: ['Ing. Carlos Mendoza', 'Ing. María Torres', 'Ing. Juan Pérez'][i % 3],
+    descripcion: 'Plano de diseño y distribución para operaciones industriales',
+  };
+});
 
 type Plano = typeof MOCK_PLANOS[0];
 
@@ -40,13 +63,15 @@ export const PlanosPage = () => {
   const [zonaFilter, setZonaFilter] = useState<string>("");
   const [subzonaFilter, setSubzonaFilter] = useState<string>("");
   const [sistemaFilter, setSistemaFilter] = useState<string>("");
-  const [versionFilter, setVersionFilter] = useState<string>("");
+  const [versionFilter, setVersionFilter] = useState<string>("Todas");
   const [estadoFilter, setEstadoFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
   const [visibleCount, setVisibleCount] = useState(15);
   const [previewPlano, setPreviewPlano] = useState<Plano | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Edit modal states
   const [editingPlano, setEditingPlano] = useState<Plano | null>(null);
@@ -55,11 +80,13 @@ export const PlanosPage = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showSuccessCheck, setShowSuccessCheck] = useState(false);
   
-  // Permissions modal state
+  // Permissions modal state - updated to use checkboxes
   const [permissionsData, setPermissionsData] = useState({
     rol: "",
-    acceso: "",
+    accesoDescargar: false,
+    accesoSubir: false,
     empresa: "",
     usuario: "",
     versionesAutorizar: "todas",
@@ -68,7 +95,7 @@ export const PlanosPage = () => {
     tiempoAcceso: ""
   });
   
-  // Status modal state
+  // Status modal state - with file upload
   const [statusData, setStatusData] = useState({
     status: "",
     comentario: "",
@@ -102,7 +129,17 @@ export const PlanosPage = () => {
     const matchesZona = !zonaFilter || plano.zona === zonaFilter;
     const matchesSubzona = !subzonaFilter || plano.subzona === subzonaFilter;
     const matchesSistema = !sistemaFilter || plano.sistema === sistemaFilter;
-    const matchesVersion = !versionFilter || plano.version === parseInt(versionFilter);
+    
+    // Filtro de versión actualizado
+    let matchesVersion = true;
+    if (versionFilter === 'Versión actual') {
+      // Find the maximum version for this plano name
+      const maxVersionForPlano = Math.max(
+        ...MOCK_PLANOS.filter(p => p.nombre === plano.nombre).map(p => p.version)
+      );
+      matchesVersion = plano.version === maxVersionForPlano;
+    }
+    
     const matchesEstado = !estadoFilter || plano.estado === estadoFilter;
     
     let matchesDate = true;
@@ -116,7 +153,31 @@ export const PlanosPage = () => {
            matchesVersion && matchesEstado && matchesDate;
   });
 
-  const visiblePlanos = filteredPlanos.slice(0, visibleCount);
+  // Sort planos
+  const sortedPlanos = [...filteredPlanos].sort((a, b) => {
+    if (!sortColumn) return 0;
+    
+    let aValue = a[sortColumn as keyof typeof a];
+    let bValue = b[sortColumn as keyof typeof b];
+    
+    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const visiblePlanos = sortedPlanos.slice(0, visibleCount);
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // Reset visible count when filters change
   useEffect(() => {
@@ -146,12 +207,12 @@ export const PlanosPage = () => {
 
   const getEstadoNeonStyle = (estado: string) => {
     switch (estado) {
-      case 'Pendiente': 
-        return 'border-[#f97316] text-[#f97316] bg-transparent shadow-[0_0_8px_rgba(249,115,22,0.3)]';
-      case 'Aprobado': 
-        return 'border-[#10b981] text-[#10b981] bg-transparent shadow-[0_0_8px_rgba(16,185,129,0.3)]';
-      case 'En revisión': 
-        return 'border-[#3b82f6] text-[#3b82f6] bg-transparent shadow-[0_0_8px_rgba(59,130,246,0.3)]';
+      case 'PENDIENTE': 
+        return 'border-[#f97316] text-[#f97316] bg-transparent shadow-[0_0_8px_rgba(249,115,22,0.5)]';
+      case 'APROBADO': 
+        return 'border-[#10b981] text-[#10b981] bg-transparent shadow-[0_0_8px_rgba(16,185,129,0.5)]';
+      case 'COMENTADO': 
+        return 'border-[#eab308] text-[#eab308] bg-transparent shadow-[0_0_8px_rgba(234,179,8,0.5)]';
       default: 
         return 'border-gray-400 text-gray-400 bg-transparent';
     }
@@ -172,74 +233,58 @@ export const PlanosPage = () => {
 
   const handleActionMenuOption = (action: string) => {
     setShowActionMenu(false);
-    switch (action) {
+    setTimeout(() => {
+      switch (action) {
+        case 'permissions':
+          setShowPermissionsModal(true);
+          break;
+        case 'status':
+          setShowStatusModal(true);
+          break;
+        case 'delete':
+          setShowDeleteModal(true);
+          break;
+        case 'rename':
+          setRenameData({ nombre: editingPlano?.nombre || "", error: false });
+          setShowRenameModal(true);
+          break;
+      }
+    }, 150);
+  };
+
+  const handleActionComplete = () => {
+    setShowSuccessCheck(true);
+    setTimeout(() => {
+      setShowSuccessCheck(false);
+      setShowActionMenu(false);
+      setShowPermissionsModal(false);
+      setShowStatusModal(false);
+      setShowDeleteModal(false);
+      setShowRenameModal(false);
+      setEditingPlano(null);
+    }, 2000);
+  };
+
+  const handleCancelToMenu = (currentModal: string) => {
+    // Close current modal
+    switch(currentModal) {
       case 'permissions':
-        setShowPermissionsModal(true);
+        setShowPermissionsModal(false);
         break;
       case 'status':
-        setShowStatusModal(true);
+        setShowStatusModal(false);
         break;
       case 'delete':
-        setShowDeleteModal(true);
+        setShowDeleteModal(false);
         break;
       case 'rename':
-        setRenameData({ nombre: editingPlano?.nombre || "", error: false });
-        setShowRenameModal(true);
+        setShowRenameModal(false);
         break;
     }
-  };
-
-  const handleSavePermissions = () => {
-    console.log('Guardando permisos:', permissionsData);
-    setShowPermissionsModal(false);
-    setEditingPlano(null);
-    // Reset form
-    setPermissionsData({
-      rol: "",
-      acceso: "",
-      empresa: "",
-      usuario: "",
-      versionesAutorizar: "todas",
-      versionesEspecificas: "",
-      frecuencia: "",
-      tiempoAcceso: ""
-    });
-  };
-
-  const handleUpdateStatus = () => {
-    console.log('Actualizando status:', statusData);
-    setShowStatusModal(false);
-    setEditingPlano(null);
-    // Reset form
-    setStatusData({
-      status: "",
-      comentario: "",
-      archivo: null
-    });
-  };
-
-  const handleDeletePlano = () => {
-    console.log('Eliminando plano:', editingPlano?.codigo);
-    // In a real app, you would delete from the data source
-    setShowDeleteModal(false);
-    setEditingPlano(null);
-  };
-
-  const handleSaveRename = () => {
-    // Check if name already exists
-    const nameExists = MOCK_PLANOS.some(
-      p => p.nombre.toLowerCase() === renameData.nombre.toLowerCase() && p.id !== editingPlano?.id
-    );
-    
-    if (nameExists) {
-      setRenameData({ ...renameData, error: true });
-      return;
-    }
-    
-    console.log('Renombrando plano:', editingPlano?.codigo, 'a', renameData.nombre);
-    setShowRenameModal(false);
-    setEditingPlano(null);
-    setRenameData({ nombre: "", error: false });
+    // Show action menu after a brief delay
+    setTimeout(() => {
+      setShowActionMenu(true);
+    }, 150);
   };
 
   const handleCancelModals = () => {
@@ -263,7 +308,7 @@ export const PlanosPage = () => {
     setZonaFilter("");
     setSubzonaFilter("");
     setSistemaFilter("");
-    setVersionFilter("");
+    setVersionFilter("Todas");
     setEstadoFilter("");
     setDateFrom(undefined);
     setDateTo(undefined);
@@ -326,7 +371,7 @@ export const PlanosPage = () => {
         unidadMedida: uploadFormData.unidadMedida,
         version: 1,
         isActual: true,
-        estado: 'Pendiente',
+        estado: 'PENDIENTE',
         actualizado: new Date().toISOString(),
         file: uploadedFile
       };
@@ -334,7 +379,6 @@ export const PlanosPage = () => {
       setShowUploadForm(false);
       setUploadedFile(null);
       setUploadFormData({ zona: "", subzona: "", sistema: "", unidadMedida: "" });
-      // Show success toast (you can implement this with your toast system)
       console.log('✓ Archivo subido exitosamente');
     }
   };
@@ -363,8 +407,8 @@ export const PlanosPage = () => {
             {/* Filtros */}
             <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-4">
               {/* Primera fila de filtros */}
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-8 gap-3">
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Buscar
                   </label>
@@ -374,17 +418,17 @@ export const PlanosPage = () => {
                       placeholder="Nombre o código (PL-0001)"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 text-foreground dark:text-gray-200"
                     />
                   </div>
                 </div>
 
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Zona
                   </label>
                   <Select value={zonaFilter} onValueChange={setZonaFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -396,12 +440,12 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Subzona
                   </label>
                   <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -413,12 +457,12 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Sistema
                   </label>
                   <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
@@ -430,45 +474,39 @@ export const PlanosPage = () => {
                   </Select>
                 </div>
 
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Versión
                   </label>
                   <Select value={versionFilter} onValueChange={setVersionFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="1">v1</SelectItem>
-                      <SelectItem value="2">v2</SelectItem>
-                      <SelectItem value="3">v3</SelectItem>
-                      <SelectItem value="4">v4</SelectItem>
+                      <SelectItem value="Todas">Todas</SelectItem>
+                      <SelectItem value="Versión actual">Versión actual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              {/* Segunda fila: Estado y Rango de fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Estado
                   </label>
                   <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                    <SelectTrigger className="w-[140px] [&>span]:text-foreground dark:[&>span]:text-gray-200">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent className="z-[100]">
                       <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Pendiente">Pendiente</SelectItem>
-                      <SelectItem value="Aprobado">Aprobado</SelectItem>
-                      <SelectItem value="En revisión">En revisión</SelectItem>
+                      <SelectItem value="APROBADO">APROBADO</SelectItem>
+                      <SelectItem value="PENDIENTE">PENDIENTE</SelectItem>
+                      <SelectItem value="COMENTADO">COMENTADO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Fecha desde
                   </label>
@@ -477,8 +515,9 @@ export const PlanosPage = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal text-foreground dark:text-gray-200",
-                          !dateFrom && "text-muted-foreground"
+                          "w-[160px] justify-start text-left font-normal",
+                          !dateFrom && "text-muted-foreground",
+                          dateFrom && "text-foreground dark:text-gray-200"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -496,7 +535,7 @@ export const PlanosPage = () => {
                   </Popover>
                 </div>
 
-                <div className="md:col-span-1">
+                <div>
                   <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                     Fecha hasta
                   </label>
@@ -505,8 +544,9 @@ export const PlanosPage = () => {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal text-foreground dark:text-gray-200",
-                          !dateTo && "text-muted-foreground"
+                          "w-[160px] justify-start text-left font-normal",
+                          !dateTo && "text-muted-foreground",
+                          dateTo && "text-foreground dark:text-gray-200"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -523,17 +563,18 @@ export const PlanosPage = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
+              </div>
 
-                <div className="md:col-span-1 flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={clearAllFilters}
-                    className="w-full"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Limpiar Filtros
-                  </Button>
-                </div>
+              {/* Botón de limpiar filtros */}
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={clearAllFilters}
+                  className="bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Limpiar Filtros
+                </Button>
               </div>
             </div>
 
@@ -553,14 +594,63 @@ export const PlanosPage = () => {
                 <Table>
                   <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
                     <TableRow>
-                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
-                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Empresa Responsable</TableHead>
-                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
-                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
-                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
+                      <TableHead 
+                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        onClick={() => handleSort('nombre')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Plano
+                          {sortColumn === 'nombre' && (
+                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        onClick={() => handleSort('empresaResponsable')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Empresa Responsable
+                          {sortColumn === 'empresaResponsable' && (
+                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        onClick={() => handleSort('zona')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Zona
+                          {sortColumn === 'zona' && (
+                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        onClick={() => handleSort('subzona')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Subzona
+                          {sortColumn === 'subzona' && (
+                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        onClick={() => handleSort('sistema')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Sistema
+                          {sortColumn === 'sistema' && (
+                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </TableHead>
                       <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
                       <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
-                      <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Actualizado</TableHead>
                       <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -568,12 +658,31 @@ export const PlanosPage = () => {
                     {visiblePlanos.map((plano) => (
                       <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
                         <TableCell>
-                          <div>
-                            <div className="font-semibold text-foreground dark:text-gray-100">
-                              {plano.nombre}
-                            </div>
-                            <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
-                              {plano.codigo}
+                          <div className="flex items-center gap-2">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary cursor-help flex-shrink-0">
+                                    <Info className="h-3 w-3 text-primary" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <p><strong>Fecha de subida:</strong> {plano.fechaSubida}</p>
+                                    <p><strong>Aprobador SiderPerú:</strong> {plano.aprobadorSiderPeru}</p>
+                                    <p><strong>Versión:</strong> {plano.version}</p>
+                                    <p><strong>Descripción:</strong> {plano.descripcion}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <div>
+                              <div className="font-semibold text-foreground dark:text-gray-100">
+                                {plano.nombre}
+                              </div>
+                              <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
+                                {plano.codigo}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
@@ -603,9 +712,6 @@ export const PlanosPage = () => {
                               {plano.estado}
                             </Badge>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-foreground dark:text-gray-200">
-                          {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-3">
@@ -938,14 +1044,14 @@ export const PlanosPage = () => {
 
         {/* Action Menu Modal */}
         <Dialog open={showActionMenu} onOpenChange={handleCancelModals}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md border-2 border-primary/30">
             <DialogHeader>
-              <DialogTitle>Opciones de Edición</DialogTitle>
+              <DialogTitle className="text-xl">Opciones de Edición</DialogTitle>
             </DialogHeader>
             <div className="space-y-2 py-4">
               <Button
                 variant="outline"
-                className="w-full justify-start h-auto py-4"
+                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
                 onClick={() => handleActionMenuOption('permissions')}
               >
                 <Shield className="w-5 h-5 mr-3" />
@@ -956,7 +1062,7 @@ export const PlanosPage = () => {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start h-auto py-4"
+                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
                 onClick={() => handleActionMenuOption('status')}
               >
                 <Settings className="w-5 h-5 mr-3" />
@@ -967,7 +1073,7 @@ export const PlanosPage = () => {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start h-auto py-4"
+                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
                 onClick={() => handleActionMenuOption('delete')}
               >
                 <FileX className="w-5 h-5 mr-3" />
@@ -978,7 +1084,7 @@ export const PlanosPage = () => {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start h-auto py-4"
+                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
                 onClick={() => handleActionMenuOption('rename')}
               >
                 <FileEdit className="w-5 h-5 mr-3" />
@@ -989,18 +1095,38 @@ export const PlanosPage = () => {
               </Button>
             </div>
             <div className="flex justify-center pt-2">
-              <Button variant="outline" onClick={handleCancelModals} className="w-full">
+              <Button 
+                variant="secondary" 
+                onClick={handleCancelModals} 
+                className="w-full bg-muted hover:bg-muted/80"
+              >
                 Cancelar
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
+        {/* Success Check Animation */}
+        <Dialog open={showSuccessCheck} onOpenChange={setShowSuccessCheck}>
+          <DialogContent className="sm:max-w-xs border-0 bg-transparent shadow-none">
+            <div className="flex items-center justify-center">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full border-4 border-dashed border-green-500 animate-spin" style={{ animationDuration: '3s' }}></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
+                    <Check className="h-10 w-10 text-green-500" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Permissions Modal */}
         <Dialog open={showPermissionsModal} onOpenChange={() => setShowPermissionsModal(false)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-primary/30">
             <DialogHeader>
-              <DialogTitle>Gestionar Permisos - {editingPlano?.nombre}</DialogTitle>
+              <DialogTitle className="text-xl">Gestionar Permisos - {editingPlano?.nombre}</DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
               {/* Rol */}
@@ -1017,19 +1143,31 @@ export const PlanosPage = () => {
                 </Select>
               </div>
 
-              {/* Acceso a */}
+              {/* Acceso a - Changed to checkboxes */}
               <div>
                 <Label className="text-sm font-semibold mb-3 block">Acceso a:</Label>
-                <RadioGroup value={permissionsData.acceso} onValueChange={(value) => setPermissionsData({...permissionsData, acceso: value})}>
+                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="descargar" id="descargar" />
+                    <Checkbox
+                      id="descargar"
+                      checked={permissionsData.accesoDescargar}
+                      onCheckedChange={(checked) =>
+                        setPermissionsData({ ...permissionsData, accesoDescargar: checked as boolean })
+                      }
+                    />
                     <Label htmlFor="descargar" className="font-normal cursor-pointer">Descargar</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="subir" id="subir" />
+                    <Checkbox
+                      id="subir"
+                      checked={permissionsData.accesoSubir}
+                      onCheckedChange={(checked) =>
+                        setPermissionsData({ ...permissionsData, accesoSubir: checked as boolean })
+                      }
+                    />
                     <Label htmlFor="subir" className="font-normal cursor-pointer">Subir nueva versión</Label>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
 
               {/* Empresa */}
@@ -1128,10 +1266,14 @@ export const PlanosPage = () => {
 
               {/* Buttons */}
               <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setShowPermissionsModal(false)} className="flex-1">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => handleCancelToMenu('permissions')} 
+                  className="flex-1 bg-muted hover:bg-muted/80"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={handleSavePermissions} className="flex-1">
+                <Button onClick={handleActionComplete} className="flex-1">
                   Guardar
                 </Button>
               </div>
@@ -1141,9 +1283,9 @@ export const PlanosPage = () => {
 
         {/* Status Modal */}
         <Dialog open={showStatusModal} onOpenChange={() => setShowStatusModal(false)}>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-xl border-2 border-primary/30">
             <DialogHeader>
-              <DialogTitle>Gestionar Status - {editingPlano?.nombre}</DialogTitle>
+              <DialogTitle className="text-xl">Gestionar Status - {editingPlano?.nombre}</DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
               {/* Status */}
@@ -1161,8 +1303,15 @@ export const PlanosPage = () => {
                 </RadioGroup>
               </div>
 
-              {/* Comentario */}
-              {statusData.status === "observar" && (
+              {/* Comentario with smooth animation */}
+              <div 
+                className={cn(
+                  "overflow-hidden transition-all duration-300 ease-in-out space-y-4",
+                  statusData.status === "observar" 
+                    ? "max-h-[600px] opacity-100" 
+                    : "max-h-0 opacity-0"
+                )}
+              >
                 <div>
                   <Label className="text-sm font-semibold mb-3 block">Comentario:</Label>
                   <Textarea 
@@ -1174,43 +1323,87 @@ export const PlanosPage = () => {
                         setStatusData({...statusData, comentario: e.target.value});
                       }
                     }}
-                    className="min-h-[150px] resize-none"
-                    maxLength={10000}
+                    className="min-h-[120px]"
                   />
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Palabras: {statusData.comentario.split(/\s+/).filter(word => word.length > 0).length} / 1500
-                  </div>
-                  
-                  <div className="mt-4">
-                    <Label className="text-sm font-medium mb-2 block">O subir archivo (máx. 5MB):</Label>
-                    <Input 
-                      type="file"
-                      accept=".pdf,.doc,.docx,.txt"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file && file.size <= 5 * 1024 * 1024) {
-                          setStatusData({...statusData, archivo: file});
-                        } else if (file) {
-                          alert("El archivo excede el tamaño máximo de 5MB");
-                          e.target.value = "";
-                        }
-                      }}
-                    />
-                    {statusData.archivo && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Archivo seleccionado: {statusData.archivo.name}
-                      </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statusData.comentario.split(/\s+/).filter(word => word.length > 0).length}/1500 palabras
+                  </p>
+                </div>
+
+                {/* Drag and drop file upload */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">O puede subir un archivo (máx. 5MB):</Label>
+                  <div
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                      statusData.archivo 
+                        ? "border-green-500 bg-green-500/10" 
+                        : "border-muted-foreground/25 hover:border-primary/50"
+                    )}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file && file.size <= 5 * 1024 * 1024) {
+                        setStatusData({ ...statusData, archivo: file });
+                      }
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                  >
+                    {statusData.archivo ? (
+                      <div className="space-y-2">
+                        <FileText className="h-8 w-8 mx-auto text-green-500" />
+                        <p className="text-sm font-medium">{statusData.archivo.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(statusData.archivo.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setStatusData({ ...statusData, archivo: null })}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                        <p className="text-sm">Arrastra tu archivo aquí</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = '*/*';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file && file.size <= 5 * 1024 * 1024) {
+                                setStatusData({ ...statusData, archivo: file });
+                              }
+                            };
+                            input.click();
+                          }}
+                        >
+                          <Upload className="h-4 w-4 mr-1" />
+                          Seleccionar archivo
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Buttons */}
               <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setShowStatusModal(false)} className="flex-1">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => handleCancelToMenu('status')} 
+                  className="flex-1 bg-muted hover:bg-muted/80"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={handleUpdateStatus} className="flex-1">
+                <Button onClick={handleActionComplete} className="flex-1">
                   Actualizar
                 </Button>
               </div>
@@ -1220,60 +1413,74 @@ export const PlanosPage = () => {
 
         {/* Delete Modal */}
         <Dialog open={showDeleteModal} onOpenChange={() => setShowDeleteModal(false)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md border-2 border-primary/30">
             <DialogHeader>
-              <DialogTitle>Eliminar Plano</DialogTitle>
+              <DialogTitle className="text-center text-xl">¿Está seguro que desea eliminar el plano?</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6 py-4">
-              <p className="text-center text-foreground dark:text-gray-200">
-                ¿Está seguro que desea eliminar el plano?
-              </p>
-              <p className="text-center text-sm font-semibold text-foreground dark:text-gray-100">
-                {editingPlano?.nombre} ({editingPlano?.codigo})
-              </p>
-              <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setShowDeleteModal(false)} className="flex-1">
-                  No
-                </Button>
-                <Button variant="destructive" onClick={handleDeletePlano} className="flex-1">
-                  Sí
-                </Button>
-              </div>
+            <div className="flex gap-3 py-4">
+              <Button
+                variant="destructive"
+                onClick={handleActionComplete}
+                className="flex-1"
+              >
+                Sí
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => handleCancelToMenu('delete')} 
+                className="flex-1 bg-muted hover:bg-muted/80"
+              >
+                No
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
 
         {/* Rename Modal */}
         <Dialog open={showRenameModal} onOpenChange={() => setShowRenameModal(false)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md border-2 border-primary/30">
             <DialogHeader>
-              <DialogTitle>Renombrar Plano</DialogTitle>
+              <DialogTitle className="text-xl">Renombrar Plano</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6 py-4">
+            <div className="space-y-4 py-4">
               <div>
                 <Label className="text-sm font-semibold mb-3 block">Nombre:</Label>
-                <Input 
+                <Input
                   value={renameData.nombre}
-                  onChange={(e) => setRenameData({nombre: e.target.value, error: false})}
+                  onChange={(e) => {
+                    const nameExists = MOCK_PLANOS.some(
+                      p => p.nombre.toLowerCase() === e.target.value.toLowerCase() && p.id !== editingPlano?.id
+                    );
+                    setRenameData({ nombre: e.target.value, error: nameExists });
+                  }}
                   placeholder="Ingrese el nuevo nombre"
                 />
                 {renameData.error && (
-                  <p className="text-xs text-red-500 mt-2">
-                    Ya existe un plano con este nombre
-                  </p>
+                  <p className="text-sm text-destructive mt-2">Ya existe un plano con este nombre</p>
                 )}
               </div>
+
+              {/* Buttons */}
               <div className="flex gap-3 pt-4">
-                <Button variant="outline" onClick={() => setShowRenameModal(false)} className="flex-1">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => handleCancelToMenu('rename')} 
+                  className="flex-1 bg-muted hover:bg-muted/80"
+                >
                   Cancelar
                 </Button>
-                <Button onClick={handleSaveRename} className="flex-1" disabled={!renameData.nombre.trim()}>
+                <Button 
+                  onClick={handleActionComplete} 
+                  className="flex-1"
+                  disabled={renameData.error || !renameData.nombre}
+                >
                   Guardar
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
+
         </div>
       </div>
     </DashboardLayout>

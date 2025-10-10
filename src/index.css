@@ -117,3 +117,26 @@ All colors MUST be HSL.
   background: hsl(var(--muted-foreground) / 0.6);
   background-clip: padding-box;
 }
+
+.neon-badge {
+  box-shadow: 0 0 10px currentColor;
+  border: 1px solid currentColor;
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s ease-out;
+}
