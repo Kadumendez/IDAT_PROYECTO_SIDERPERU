@@ -6,19 +6,9 @@
 
 const DEMO_USERS = [
   "kadudesposorio.macris@gmail.com",
-  "nayelidelacruz@gmail.com",
-  "natalysalcedo@gmail.com",
   "admin", 
   "supervisor"
 ];
-
-const USER_NAMES: Record<string, string> = {
-  "kadudesposorio.macris@gmail.com": "Kadú Desposorio",
-  "nayelidelacruz@gmail.com": "Nayeli De la Cruz",
-  "natalysalcedo@gmail.com": "Nataly Salcedo",
-  "admin": "Administrador",
-  "supervisor": "Supervisor"
-};
 
 const DEMO_PASSWORD = "ContraseñaSegura123";
 const MAX_ATTEMPTS = 3;
@@ -146,12 +136,4 @@ export const isAuthenticated = (): boolean => {
 
 export const getCurrentUser = (): string | null => {
   return localStorage.getItem('auth:user');
-};
-
-export const getCurrentUserName = (): string => {
-  const user = localStorage.getItem('auth:user');
-  if (!user) return "Usuario";
-  
-  const normalizedUser = user.toLowerCase();
-  return USER_NAMES[normalizedUser] || user;
 };
