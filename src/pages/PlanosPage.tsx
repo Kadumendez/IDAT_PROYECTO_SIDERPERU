@@ -215,10 +215,10 @@ export const PlanosPage = () => {
 
   // Permissions modal state - updated to use checkboxes
   const [permissionsData, setPermissionsData] = useState({
-    rol: 'siderperu',
+    rol: '',
     accesoDescargar: false,
     accesoSubir: false,
-    empresa: 'SIDERPERÚ',
+    empresa: '',
     usuario: '',
     versionesAutorizar: 'todas',
     versionesEspecificas: '',
@@ -238,6 +238,10 @@ export const PlanosPage = () => {
     nombre: '',
     nombreExiste: false,
   });
+
+  // Info modal state
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [selectedPlanoInfo, setSelectedPlanoInfo] = useState<Plano | null>(null);
 
   // Cargas tab state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -261,7 +265,7 @@ export const PlanosPage = () => {
     const matchSistema = filtros.sistema === 'todos' || plano.sistema === filtros.sistema;
     const matchVersion =
       filtros.version === 'todas' ||
-      (filtros.version === 'actual' && plano.version === 'V05');
+      (filtros.version === 'actual' && plano.esVersionActual);
     const matchEstado = filtros.estado === 'todos' || plano.estado === filtros.estado;
     const matchAprobador =
       filtros.aprobadorSiderperu === 'todos' ||
@@ -567,8 +571,22 @@ export const PlanosPage = () => {
                         </Select>
                       </div>
 
-                      {/* Aprobador SiderPerú */}
-                      <div>
+                      {/* Limpiar Filtros */}
+                      <div className="xl:col-span-1 flex items-end">
+                        <Button
+                          onClick={limpiarFiltros}
+                          variant="outline"
+                          className="w-full bg-destructive/30 hover:bg-destructive/40 text-white border-destructive/60"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Limpiar
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Segunda fila de filtros - Aprobador SiderPerú */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9 gap-3 items-end mt-3">
+                      <div className="xl:col-span-2">
                         <Label htmlFor="aprobador" className="text-sm font-medium mb-2 block">
                           Aprobador SiderPerú
                         </Label>
@@ -591,21 +609,16 @@ export const PlanosPage = () => {
                           </SelectContent>
                         </Select>
                       </div>
-
-                      {/* Limpiar Filtros */}
-                      <div className="xl:col-span-1 flex items-end">
-                        <Button
-                          onClick={limpiarFiltros}
-                          variant="outline"
-                          className="w-full bg-destructive/20 hover:bg-destructive/30 text-white border-destructive/50"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Limpiar
-                        </Button>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Contador de Resultados */}
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">
+                    RESULTADOS ({filteredPlanos.length})
+                  </h3>
+                </div>
 
                 {/* Tabla de Resultados */}
                 <Card>
@@ -705,38 +718,17 @@ export const PlanosPage = () => {
                           <TableBody>
                             {visiblePlanos.map((plano) => (
                               <TableRow key={plano.id}>
-                                <TableCell className="font-medium w-[30%]">
+                                 <TableCell className="font-medium w-[30%]">
                                   <div className="flex items-center gap-2">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 cursor-help">
-                                          <span className="text-white text-xs font-semibold italic">
-                                            i
-                                          </span>
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent
-                                        side="right"
-                                        className="max-w-xs"
-                                        sideOffset={0}
-                                      >
-                                        <div className="space-y-1 text-sm">
-                                          <p>
-                                            <strong>Fecha de subida:</strong> {plano.fechaSubida}
-                                          </p>
-                                          <p>
-                                            <strong>Aprobador SiderPerú:</strong>{' '}
-                                            {plano.aprobadorSiderperu}
-                                          </p>
-                                          <p>
-                                            <strong>Versión:</strong> {plano.version}
-                                          </p>
-                                          <p>
-                                            <strong>Descripción:</strong> {plano.descripcion}
-                                          </p>
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPlanoInfo(plano);
+                                        setShowInfoModal(true);
+                                      }}
+                                      className="text-white text-sm font-bold italic hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                      i
+                                    </button>
                                     {plano.nombre}
                                   </div>
                                 </TableCell>
@@ -745,39 +737,70 @@ export const PlanosPage = () => {
                                 <TableCell>{plano.zona}</TableCell>
                                 <TableCell>{plano.subzona}</TableCell>
                                 <TableCell>{plano.sistema}</TableCell>
-                                <TableCell>{plano.version}</TableCell>
+                                <TableCell>
+                                  {plano.version}
+                                  {plano.esVersionActual && (
+                                    <Badge variant="outline" className="ml-2 text-xs">
+                                      Actual
+                                    </Badge>
+                                  )}
+                                </TableCell>
                                 <TableCell>
                                   <Badge
-                                    className={`neon-badge ${
-                                      plano.estado === 'APROBADO'
-                                        ? 'bg-blue-500/20 text-blue-400 border-blue-400'
-                                        : plano.estado === 'PENDIENTE'
-                                          ? 'bg-yellow-500/20 text-yellow-400 border-yellow-400'
-                                          : 'bg-orange-500/20 text-orange-400 border-orange-400'
-                                    }`}
+                                    className={`${
+                                      plano.estado === 'Aprobado'
+                                        ? 'bg-blue-500/30 text-blue-300 border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                                        : plano.estado === 'Pendiente'
+                                          ? 'bg-yellow-500/30 text-yellow-300 border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.5)]'
+                                          : 'bg-orange-500/30 text-orange-300 border-orange-500/50 shadow-[0_0_10px_rgba(249,115,22,0.5)]'
+                                    } border font-medium transition-all`}
                                   >
                                     {plano.estado}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex justify-end gap-2">
-                                    <Button size="icon" variant="ghost" className="h-8 w-8">
-                                      <Download className="h-4 w-4 text-white" />
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8">
-                                      <Eye className="h-4 w-4 text-white" />
-                                    </Button>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-8 w-8"
-                                      onClick={() => {
-                                        setEditingPlano(plano);
-                                        setShowActionMenu(true);
-                                      }}
-                                    >
-                                      <Pencil className="h-4 w-4 text-white" />
-                                    </Button>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8">
+                                          <Download className="h-4 w-4 text-white" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Descargar</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8">
+                                          <Eye className="h-4 w-4 text-white" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Vista previa</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            setEditingPlano(plano);
+                                            setRenameData({ nombre: plano.nombre, nombreExiste: false });
+                                            setShowActionMenu(true);
+                                          }}
+                                        >
+                                          <Pencil className="h-4 w-4 text-white" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Editar</p>
+                                      </TooltipContent>
+                                    </Tooltip>
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -1025,14 +1048,49 @@ export const PlanosPage = () => {
                   <Label className="text-sm font-medium mb-2 block">Rol:</Label>
                   <Select
                     value={permissionsData.rol}
-                    onValueChange={(value) => setPermissionsData({ ...permissionsData, rol: value })}
+                    onValueChange={(value) => {
+                      setPermissionsData({
+                        ...permissionsData,
+                        rol: value,
+                        empresa: value === 'siderperu' ? 'SIDERPERÚ' : '',
+                      });
+                    }}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Seleccionar rol" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="siderperu">Usuario SiderPerú</SelectItem>
                       <SelectItem value="tercero">Usuario Tercero</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Empresa:</Label>
+                  <Input
+                    value={permissionsData.empresa}
+                    onChange={(e) =>
+                      setPermissionsData({ ...permissionsData, empresa: e.target.value })
+                    }
+                    disabled={permissionsData.rol === 'siderperu'}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Usuario:</Label>
+                  <Select
+                    value={permissionsData.usuario}
+                    onValueChange={(value) =>
+                      setPermissionsData({ ...permissionsData, usuario: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar usuario" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="usuario1">Usuario 1</SelectItem>
+                      <SelectItem value="usuario2">Usuario 2</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1072,35 +1130,6 @@ export const PlanosPage = () => {
                     </div>
                   </div>
                 </div>
-
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Empresa:</Label>
-                  <Input
-                    value={permissionsData.empresa}
-                    onChange={(e) =>
-                      setPermissionsData({ ...permissionsData, empresa: e.target.value })
-                    }
-                    disabled={permissionsData.rol === 'siderperu'}
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Usuario:</Label>
-                  <Select
-                    value={permissionsData.usuario}
-                    onValueChange={(value) =>
-                      setPermissionsData({ ...permissionsData, usuario: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar usuario" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="usuario1">Usuario 1</SelectItem>
-                      <SelectItem value="usuario2">Usuario 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               <div className="space-y-4">
@@ -1125,20 +1154,20 @@ export const PlanosPage = () => {
                           Especificar
                         </Label>
                       </div>
-                      <Input
-                        placeholder="ej: 1-5, 8, 11-13"
-                        className="ml-6"
-                        value={permissionsData.versionesEspecificas}
-                        onChange={(e) =>
-                          setPermissionsData({
-                            ...permissionsData,
-                            versionesEspecificas: e.target.value,
-                          })
-                        }
-                        disabled={permissionsData.versionesAutorizar !== 'especificar'}
-                      />
                     </div>
                   </RadioGroup>
+                  <Input
+                    placeholder="ej: 1-5, 8, 11-13"
+                    className="mt-2 w-4/5"
+                    value={permissionsData.versionesEspecificas}
+                    onChange={(e) =>
+                      setPermissionsData({
+                        ...permissionsData,
+                        versionesEspecificas: e.target.value,
+                      })
+                    }
+                    disabled={permissionsData.versionesAutorizar !== 'especificar'}
+                  />
                 </div>
 
                 <div>
@@ -1185,14 +1214,13 @@ export const PlanosPage = () => {
                   setShowSuccessCheck(true);
                   setTimeout(() => {
                     setShowSuccessCheck(false);
-                    setShowActionMenu(true);
                   }, 2000);
                 }}
               >
                 Guardar
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={() => {
                   setShowPermissionsModal(false);
                   setTimeout(() => setShowActionMenu(true), 150);
@@ -1315,14 +1343,13 @@ export const PlanosPage = () => {
                   setShowSuccessCheck(true);
                   setTimeout(() => {
                     setShowSuccessCheck(false);
-                    setShowActionMenu(true);
                   }, 2000);
                 }}
               >
                 Actualizar
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={() => {
                   setShowStatusModal(false);
                   setTimeout(() => setShowActionMenu(true), 150);
@@ -1356,14 +1383,13 @@ export const PlanosPage = () => {
                   setShowSuccessCheck(true);
                   setTimeout(() => {
                     setShowSuccessCheck(false);
-                    setShowActionMenu(true);
                   }, 2000);
                 }}
               >
                 Sí
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setTimeout(() => setShowActionMenu(true), 150);
@@ -1396,6 +1422,8 @@ export const PlanosPage = () => {
                     );
                     setRenameData({ nombre, nombreExiste: exists });
                   }}
+                  autoFocus
+                  onFocus={(e) => e.target.select()}
                 />
                 {renameData.nombreExiste && (
                   <p className="text-sm text-destructive mt-1">Ya existe un plano con este nombre</p>
@@ -1409,7 +1437,6 @@ export const PlanosPage = () => {
                   setShowSuccessCheck(true);
                   setTimeout(() => {
                     setShowSuccessCheck(false);
-                    setShowActionMenu(true);
                   }, 2000);
                 }}
                 disabled={renameData.nombreExiste || !renameData.nombre}
@@ -1417,7 +1444,7 @@ export const PlanosPage = () => {
                 Guardar
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={() => {
                   setShowRenameModal(false);
                   setTimeout(() => setShowActionMenu(true), 150);
@@ -1432,9 +1459,9 @@ export const PlanosPage = () => {
         {/* Success Check Animation */}
         {showSuccessCheck && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-card p-8 rounded-lg shadow-lg animate-scale-in border-2 border-green-500/50">
+            <div className="bg-green-500/20 p-8 rounded-lg shadow-lg animate-scale-in border-2 border-green-500/50 backdrop-blur-md">
               <div className="flex flex-col items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-green-500/20 border-4 border-dashed border-green-500 flex items-center justify-center animate-spin-slow">
+                <div className="w-20 h-20 rounded-full bg-green-500/30 border-4 border-dashed border-green-500 flex items-center justify-center animate-spin-slow">
                   <Check className="w-10 h-10 text-green-500" />
                 </div>
                 <p className="text-lg font-semibold text-green-500">¡Realizado!</p>
@@ -1442,6 +1469,65 @@ export const PlanosPage = () => {
             </div>
           </div>
         )}
+
+        {/* Modal: Info Plano */}
+        <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+          <DialogContent className="sm:max-w-2xl backdrop-blur-md">
+            <DialogHeader>
+              <DialogTitle>Información del Plano</DialogTitle>
+            </DialogHeader>
+            {selectedPlanoInfo && (
+              <div className="grid grid-cols-2 gap-4 py-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Nombre del Plano</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.nombre}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Versión</Label>
+                  <p className="text-sm mt-1">
+                    {selectedPlanoInfo.version}
+                    {selectedPlanoInfo.esVersionActual && ' (Actual)'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Fecha de Subida</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.fechaSubida}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Estado</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.estado}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Aprobador SiderPerú</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.aprobadorSiderperu}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Empresa Responsable</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.empresaResponsable}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Zona</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.zona}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Subzona</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.subzona}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Sistema</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.sistema}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Descripción</Label>
+                  <p className="text-sm mt-1">{selectedPlanoInfo.descripcion}</p>
+                </div>
+              </div>
+            )}
+            <div className="flex justify-center">
+              <Button onClick={() => setShowInfoModal(false)}>Cerrar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Preview Modal */}
         {previewFile && (
