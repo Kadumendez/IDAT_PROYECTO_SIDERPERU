@@ -1,6 +1,6 @@
 import { useState, useEffect, ReactNode, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { logout, getCurrentUser } from "@/lib/auth";
+import { logout, getCurrentUser, getCurrentUserName } from "@/lib/auth";
 import { showToast } from "@/components/Toast";
 import { UserSettingsModal } from "@/components/UserSettingsModal";
 import siderperuLogo from "@/assets/siderperu-logo.png";
@@ -181,7 +181,7 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
             </button>
 
             <span className="text-sm font-medium text-foreground dark:text-gray-200 ml-2">
-              Kadú Desposorio
+              {getCurrentUserName()}
             </span>
             
             <button className="relative p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-all">
