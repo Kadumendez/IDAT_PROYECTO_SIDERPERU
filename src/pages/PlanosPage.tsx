@@ -962,116 +962,6 @@ export const PlanosPage = () => {
             {/* Uploaded Files Table */}
             {uploadedPlanos.length > 0 && (
               <>
-              <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
-                <ScrollArea className="h-[400px] custom-scrollbar">
-                  <Table>
-                    <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
-                      <TableRow>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Empresa Responsable</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
-                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
-                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Actualizado</TableHead>
-                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {uploadedPlanos
-                        .filter((plano) => {
-                          const matchesSearch = cargasSearchTerm === "" || 
-                            plano.nombre.toLowerCase().includes(cargasSearchTerm.toLowerCase()) ||
-                            plano.codigo.toLowerCase().includes(cargasSearchTerm.toLowerCase());
-                          const matchesZona = !cargasZonaFilter || plano.zona === cargasZonaFilter;
-                          const matchesSubzona = !cargasSubzonaFilter || plano.subzona === cargasSubzonaFilter;
-                          const matchesSistema = !cargasSistemaFilter || plano.sistema === cargasSistemaFilter;
-                          const matchesEstado = !cargasEstadoFilter || plano.estado === cargasEstadoFilter;
-                          const matchesAprobador = !cargasAprobadorFilter || plano.aprobadorSiderPeru === cargasAprobadorFilter;
-                          
-                          let matchesVersion = true;
-                          if (cargasVersionFilter === 'Versión actual') {
-                            matchesVersion = plano.isActual;
-                          }
-                          
-                          let matchesDate = true;
-                          if (cargasDateFrom || cargasDateTo) {
-                            const planoDate = new Date(plano.actualizado);
-                            if (cargasDateFrom && planoDate < cargasDateFrom) matchesDate = false;
-                            if (cargasDateTo && planoDate > cargasDateTo) matchesDate = false;
-                          }
-
-                          return matchesSearch && matchesZona && matchesSubzona && matchesSistema && 
-                                 matchesVersion && matchesEstado && matchesAprobador && matchesDate;
-                        })
-                        .map((plano) => (
-                        <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
-                          <TableCell>
-                            <div>
-                              <div className="font-semibold text-foreground dark:text-gray-100">
-                                {plano.nombre}
-                              </div>
-                              <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
-                                {plano.codigo}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
-                              {plano.isActual && (
-                                <Badge 
-                                  variant="outline"
-                                  className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
-                                >
-                                  Actual
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-center">
-                              <Badge 
-                                variant="outline"
-                                className={cn("font-medium border-2", getEstadoNeonStyle(plano.estado))}
-                              >
-                                {plano.estado}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">
-                            {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center gap-3">
-                              <button
-                                onClick={() => handleDownload(plano)}
-                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
-                                title="Descargar"
-                              >
-                                <Download className="w-4 h-4 text-white group-hover:text-white/80" />
-                              </button>
-                              <button
-                                onClick={() => handlePreview(plano)}
-                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group text-white"
-                                title="Vista previa"
-                              >
-                                <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
-                              </button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              </div>
-
               {/* Filtros para la tabla de Cargas */}
               <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-5">
                 {/* Primera fila de filtros */}
@@ -1273,6 +1163,116 @@ export const PlanosPage = () => {
                     </Button>
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
+                <ScrollArea className="h-[400px] custom-scrollbar">
+                  <Table>
+                    <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
+                      <TableRow>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Empresa Responsable</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
+                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
+                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
+                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Actualizado</TableHead>
+                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {uploadedPlanos
+                        .filter((plano) => {
+                          const matchesSearch = cargasSearchTerm === "" || 
+                            plano.nombre.toLowerCase().includes(cargasSearchTerm.toLowerCase()) ||
+                            plano.codigo.toLowerCase().includes(cargasSearchTerm.toLowerCase());
+                          const matchesZona = !cargasZonaFilter || plano.zona === cargasZonaFilter;
+                          const matchesSubzona = !cargasSubzonaFilter || plano.subzona === cargasSubzonaFilter;
+                          const matchesSistema = !cargasSistemaFilter || plano.sistema === cargasSistemaFilter;
+                          const matchesEstado = !cargasEstadoFilter || plano.estado === cargasEstadoFilter;
+                          const matchesAprobador = !cargasAprobadorFilter || plano.aprobadorSiderPeru === cargasAprobadorFilter;
+                          
+                          let matchesVersion = true;
+                          if (cargasVersionFilter === 'Versión actual') {
+                            matchesVersion = plano.isActual;
+                          }
+                          
+                          let matchesDate = true;
+                          if (cargasDateFrom || cargasDateTo) {
+                            const planoDate = new Date(plano.actualizado);
+                            if (cargasDateFrom && planoDate < cargasDateFrom) matchesDate = false;
+                            if (cargasDateTo && planoDate > cargasDateTo) matchesDate = false;
+                          }
+
+                          return matchesSearch && matchesZona && matchesSubzona && matchesSistema && 
+                                 matchesVersion && matchesEstado && matchesAprobador && matchesDate;
+                        })
+                        .map((plano) => (
+                        <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
+                          <TableCell>
+                            <div>
+                              <div className="font-semibold text-foreground dark:text-gray-100">
+                                {plano.nombre}
+                              </div>
+                              <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
+                                {plano.codigo}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
+                              {plano.isActual && (
+                                <Badge 
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
+                                >
+                                  Actual
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center">
+                              <Badge 
+                                variant="outline"
+                                className={cn("font-medium border-2", getEstadoNeonStyle(plano.estado))}
+                              >
+                                {plano.estado}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-foreground dark:text-gray-200">
+                            {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => handleDownload(plano)}
+                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                title="Descargar"
+                              >
+                                <Download className="w-4 h-4 text-white group-hover:text-white/80" />
+                              </button>
+                              <button
+                                onClick={() => handlePreview(plano)}
+                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group text-white"
+                                title="Vista previa"
+                              >
+                                <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
+                              </button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               </div>
               </>
             )}
