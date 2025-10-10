@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit, Info, Check, ArrowUpDown } from "lucide-react";
+import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit, Info, Check, ArrowUpDown, BarChart3, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -405,7 +405,7 @@ export const PlanosPage = () => {
 
           {/* Main cards when no tab is selected */}
           {!activeTab && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <button
                 onClick={() => navigate('/planos?tab=listado')}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-primary dark:hover:border-red-500 transition-all hover:shadow-lg hover:scale-105"
@@ -432,6 +432,66 @@ export const PlanosPage = () => {
                   <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Cargas</h2>
                   <p className="text-muted-foreground dark:text-gray-400 text-center">
                     Cargar nuevos planos al sistema
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {}}
+                className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-blue-500 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-all">
+                    <BarChart3 className="w-8 h-8 text-blue-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Reportes</h2>
+                  <p className="text-muted-foreground dark:text-gray-400 text-center">
+                    Generar reportes y estadísticas de planos
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {}}
+                className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-purple-500 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-all">
+                    <Search className="w-8 h-8 text-purple-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Búsqueda Avanzada</h2>
+                  <p className="text-muted-foreground dark:text-gray-400 text-center">
+                    Búsqueda detallada con múltiples filtros
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {}}
+                className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-orange-500 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-all">
+                    <Settings className="w-8 h-8 text-orange-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Configuración</h2>
+                  <p className="text-muted-foreground dark:text-gray-400 text-center">
+                    Administrar zonas, subzonas y sistemas
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {}}
+                className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-green-500 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-all">
+                    <History className="w-8 h-8 text-green-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Historial</h2>
+                  <p className="text-muted-foreground dark:text-gray-400 text-center">
+                    Ver historial de cambios y versiones
                   </p>
                 </div>
               </button>
@@ -836,6 +896,7 @@ export const PlanosPage = () => {
                     size="sm"
                     onClick={handlePreviewFile}
                     disabled={!uploadedFile || uploadedFile.type !== 'application/pdf'}
+                    className="text-white"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     Vista previa
@@ -854,12 +915,33 @@ export const PlanosPage = () => {
                     size="sm"
                     onClick={handleClearFile}
                     disabled={!uploadedFile}
+                    className="text-white"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Limpiar
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Upload File Button */}
+            <div className="flex justify-center">
+              <Button
+                variant="default"
+                size="lg"
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => document.getElementById('file-upload-input')?.click()}
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Subir archivo
+              </Button>
+              <input
+                id="file-upload-input"
+                type="file"
+                accept=".pdf,.dwg"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
             </div>
 
             {/* Uploaded Files Table */}
@@ -934,7 +1016,7 @@ export const PlanosPage = () => {
                               </button>
                               <button
                                 onClick={() => handlePreview(plano)}
-                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group text-white"
                                 title="Vista previa"
                               >
                                 <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
@@ -969,14 +1051,14 @@ export const PlanosPage = () => {
 
         {/* Preview Modal for PDF Files */}
         <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
-          <DialogContent className="max-w-6xl h-[90vh]">
-            <DialogHeader>
+          <DialogContent className="max-w-6xl h-[90vh] p-4">
+            <DialogHeader className="pb-2">
               <DialogTitle>Vista previa: {uploadedFile?.name}</DialogTitle>
             </DialogHeader>
             {previewFile && (
               <iframe
                 src={previewFile}
-                className="w-full h-full rounded-lg"
+                className="w-full h-[calc(90vh-80px)] rounded-lg"
                 title="PDF Preview"
               />
             )}
