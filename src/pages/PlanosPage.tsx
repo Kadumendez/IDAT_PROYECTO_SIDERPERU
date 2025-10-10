@@ -76,6 +76,7 @@ export const PlanosPage = () => {
   const [visibleCount, setVisibleCount] = useState(15);
   const [previewPlano, setPreviewPlano] = useState<Plano | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
@@ -901,10 +902,12 @@ export const PlanosPage = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={handleAddFile}
                     disabled={!uploadedFile}
                     className="text-white"
                   >
-                    Descripción
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar descripción
                   </Button>
                   <Button
                     variant="outline"
@@ -924,7 +927,7 @@ export const PlanosPage = () => {
                   variant="default"
                   size="lg"
                   className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => document.getElementById('file-upload-input')?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="w-5 h-5 mr-2" />
                   Subir archivo
@@ -935,7 +938,7 @@ export const PlanosPage = () => {
               </div>
               
               <input
-                id="file-upload-input"
+                ref={fileInputRef}
                 type="file"
                 accept=".pdf,.dwg"
                 className="hidden"
