@@ -30,22 +30,9 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
   const currentUser = getCurrentUser() || "";
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(() => {
-    return sessionStorage.getItem('aiChatOpen') === 'true';
-  });
-  const [isAIChatMinimized, setIsAIChatMinimized] = useState(() => {
-    return sessionStorage.getItem('aiChatMinimized') === 'true';
-  });
+  const [showAIChat, setShowAIChat] = useState(false);
+  const [isAIChatMinimized, setIsAIChatMinimized] = useState(false);
   const chatInputRef = useRef<HTMLInputElement>(null);
-
-  // Persist AI Chat state across route changes
-  useEffect(() => {
-    sessionStorage.setItem('aiChatOpen', showAIChat.toString());
-  }, [showAIChat]);
-
-  useEffect(() => {
-    sessionStorage.setItem('aiChatMinimized', isAIChatMinimized.toString());
-  }, [isAIChatMinimized]);
 
   // Determine active route from current path
   const getActiveRoute = () => {
