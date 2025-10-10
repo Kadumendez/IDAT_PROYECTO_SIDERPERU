@@ -20,7 +20,7 @@ import {
  * Change these arrays to customize metrics and activity feed
  */
 const METRICS = [
-  { icon: Folder, label: "Planos totales", value: 128, trend: "+12%", trendUp: true, color: "blue" },
+  { icon: Folder, label: "Planos totales", value: 148, trend: "+12%", trendUp: true, color: "blue" },
   { icon: RotateCcw, label: "Revisiones pendientes", value: 5, trend: "-3%", trendUp: false, color: "orange" },
   { icon: FolderUp, label: "Subidos esta semana", value: 12, trend: "+8%", trendUp: true, color: "green" },
   { icon: FileCheck, label: "Planos aprobados", value: 98, trend: "+5%", trendUp: true, color: "purple" }
