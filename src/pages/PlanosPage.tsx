@@ -127,6 +127,17 @@ export const PlanosPage = () => {
     sistema: "",
     unidadMedida: ""
   });
+  
+  // Cargas filters state
+  const [cargasSearchTerm, setCargasSearchTerm] = useState("");
+  const [cargasZonaFilter, setCargasZonaFilter] = useState<string>("");
+  const [cargasSubzonaFilter, setCargasSubzonaFilter] = useState<string>("");
+  const [cargasSistemaFilter, setCargasSistemaFilter] = useState<string>("");
+  const [cargasVersionFilter, setCargasVersionFilter] = useState<string>("Todas");
+  const [cargasEstadoFilter, setCargasEstadoFilter] = useState<string>("");
+  const [cargasAprobadorFilter, setCargasAprobadorFilter] = useState<string>("");
+  const [cargasDateFrom, setCargasDateFrom] = useState<Date>();
+  const [cargasDateTo, setCargasDateTo] = useState<Date>();
 
   // Filter planos
   const filteredPlanos = MOCK_PLANOS.filter((plano) => {
@@ -349,7 +360,7 @@ export const PlanosPage = () => {
 
   const handlePreviewFile = () => {
     if (uploadedFile && uploadedFile.type === 'application/pdf') {
-      const url = URL.createObjectURL(uploadedFile);
+      const url = URL.createObjectURL(uploadedFile) + '#toolbar=0';
       setPreviewFile(url);
     }
   };
@@ -367,6 +378,7 @@ export const PlanosPage = () => {
 
   const handleSaveUpload = () => {
     if (uploadedFile && uploadFormData.zona && uploadFormData.subzona && uploadFormData.sistema && uploadFormData.unidadMedida) {
+      const aprobadores = ['Ing. Carlos Mendoza', 'Ing. María Torres', 'Ing. Juan Pérez'];
       const newPlano = {
         id: uploadedPlanos.length + 1,
         codigo: `PL-${String(uploadedPlanos.length + 1).padStart(4, '0')}`,
@@ -380,6 +392,7 @@ export const PlanosPage = () => {
         isActual: true,
         estado: 'PENDIENTE',
         actualizado: new Date().toISOString(),
+        aprobadorSiderPeru: aprobadores[uploadedPlanos.length % 3],
         file: uploadedFile
       };
       setUploadedPlanos([...uploadedPlanos, newPlano]);
@@ -946,20 +959,9 @@ export const PlanosPage = () => {
               />
             </div>
 
-            {/* Load Button */}
-            <div className="flex justify-end">
-              <Button
-                variant="default"
-                size="lg"
-                className="text-white"
-                disabled={uploadedPlanos.length === 0}
-              >
-                Cargar
-              </Button>
-            </div>
-
             {/* Uploaded Files Table */}
             {uploadedPlanos.length > 0 && (
+              <>
               <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
                 <ScrollArea className="h-[400px] custom-scrollbar">
                   <Table>
@@ -977,7 +979,33 @@ export const PlanosPage = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {uploadedPlanos.map((plano) => (
+                      {uploadedPlanos
+                        .filter((plano) => {
+                          const matchesSearch = cargasSearchTerm === "" || 
+                            plano.nombre.toLowerCase().includes(cargasSearchTerm.toLowerCase()) ||
+                            plano.codigo.toLowerCase().includes(cargasSearchTerm.toLowerCase());
+                          const matchesZona = !cargasZonaFilter || plano.zona === cargasZonaFilter;
+                          const matchesSubzona = !cargasSubzonaFilter || plano.subzona === cargasSubzonaFilter;
+                          const matchesSistema = !cargasSistemaFilter || plano.sistema === cargasSistemaFilter;
+                          const matchesEstado = !cargasEstadoFilter || plano.estado === cargasEstadoFilter;
+                          const matchesAprobador = !cargasAprobadorFilter || plano.aprobadorSiderPeru === cargasAprobadorFilter;
+                          
+                          let matchesVersion = true;
+                          if (cargasVersionFilter === 'Versión actual') {
+                            matchesVersion = plano.isActual;
+                          }
+                          
+                          let matchesDate = true;
+                          if (cargasDateFrom || cargasDateTo) {
+                            const planoDate = new Date(plano.actualizado);
+                            if (cargasDateFrom && planoDate < cargasDateFrom) matchesDate = false;
+                            if (cargasDateTo && planoDate > cargasDateTo) matchesDate = false;
+                          }
+
+                          return matchesSearch && matchesZona && matchesSubzona && matchesSistema && 
+                                 matchesVersion && matchesEstado && matchesAprobador && matchesDate;
+                        })
+                        .map((plano) => (
                         <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
                           <TableCell>
                             <div>
@@ -1043,6 +1071,210 @@ export const PlanosPage = () => {
                   </Table>
                 </ScrollArea>
               </div>
+
+              {/* Filtros para la tabla de Cargas */}
+              <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-5">
+                {/* Primera fila de filtros */}
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-4">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Buscar
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Nombre o código (PL-0001)"
+                        value={cargasSearchTerm}
+                        onChange={(e) => setCargasSearchTerm(e.target.value)}
+                        className="pl-10 text-foreground dark:text-gray-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Zona
+                    </label>
+                    <Select value={cargasZonaFilter} onValueChange={setCargasZonaFilter}>
+                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="Laminados">Laminados</SelectItem>
+                        <SelectItem value="Fundición">Fundición</SelectItem>
+                        <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Subzona
+                    </label>
+                    <Select value={cargasSubzonaFilter} onValueChange={setCargasSubzonaFilter}>
+                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="Zona A">Zona A</SelectItem>
+                        <SelectItem value="Zona B">Zona B</SelectItem>
+                        <SelectItem value="Zona C">Zona C</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Sistema
+                    </label>
+                    <Select value={cargasSistemaFilter} onValueChange={setCargasSistemaFilter}>
+                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                        <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                        <SelectItem value="Estructuras">Estructuras</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Estado
+                    </label>
+                    <Select value={cargasEstadoFilter} onValueChange={setCargasEstadoFilter}>
+                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="APROBADO">APROBADO</SelectItem>
+                        <SelectItem value="PENDIENTE">PENDIENTE</SelectItem>
+                        <SelectItem value="COMENTADO">COMENTADO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Segunda fila de filtros */}
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Versión
+                    </label>
+                    <Select value={cargasVersionFilter} onValueChange={setCargasVersionFilter}>
+                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="Todas">Todas</SelectItem>
+                        <SelectItem value="Versión actual">Versión actual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Aprobador
+                    </label>
+                    <Select value={cargasAprobadorFilter} onValueChange={setCargasAprobadorFilter}>
+                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="Ing. Carlos Mendoza">Ing. Carlos Mendoza</SelectItem>
+                        <SelectItem value="Ing. María Torres">Ing. María Torres</SelectItem>
+                        <SelectItem value="Ing. Juan Pérez">Ing. Juan Pérez</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-3">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Fecha desde
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !cargasDateFrom && "text-muted-foreground",
+                            cargasDateFrom && "text-foreground dark:text-gray-200"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {cargasDateFrom ? format(cargasDateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[100]" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={cargasDateFrom}
+                          onSelect={setCargasDateFrom}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="col-span-3">
+                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                      Fecha hasta
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !cargasDateTo && "text-muted-foreground",
+                            cargasDateTo && "text-foreground dark:text-gray-200"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {cargasDateTo ? format(cargasDateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[100]" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={cargasDateTo}
+                          onSelect={setCargasDateTo}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="col-span-2 flex items-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCargasSearchTerm("");
+                        setCargasZonaFilter("");
+                        setCargasSubzonaFilter("");
+                        setCargasSistemaFilter("");
+                        setCargasVersionFilter("Todas");
+                        setCargasEstadoFilter("");
+                        setCargasAprobadorFilter("");
+                        setCargasDateFrom(undefined);
+                        setCargasDateTo(undefined);
+                      }}
+                      className="w-full bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Limpiar Filtros
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              </>
             )}
             </div>
           )}
