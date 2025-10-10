@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -61,6 +61,7 @@ type Plano = typeof MOCK_PLANOS[0];
 export const PlanosPage = () => {
   // Get active tab from URL
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab');
   
@@ -406,7 +407,7 @@ export const PlanosPage = () => {
           {!activeTab && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <button
-                onClick={() => window.location.href = '/planos?tab=listado'}
+                onClick={() => navigate('/planos?tab=listado')}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-primary dark:hover:border-red-500 transition-all hover:shadow-lg hover:scale-105"
               >
                 <div className="flex flex-col items-center justify-center space-y-4">
@@ -421,7 +422,7 @@ export const PlanosPage = () => {
               </button>
 
               <button
-                onClick={() => window.location.href = '/planos?tab=cargas'}
+                onClick={() => navigate('/planos?tab=cargas')}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-primary dark:hover:border-red-500 transition-all hover:shadow-lg hover:scale-105"
               >
                 <div className="flex flex-col items-center justify-center space-y-4">
