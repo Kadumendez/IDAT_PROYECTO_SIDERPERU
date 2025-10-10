@@ -870,14 +870,11 @@ export const PlanosPage = () => {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground dark:text-gray-100 mb-2">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
                     Planos
                   </h3>
-                  <p className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
-                    Arrastre su archivo DWG/PDF aquí o usa "Subir DWG/PDF" del TopBar
-                  </p>
                   {uploadedFile && (
                     <div className="flex items-center gap-2 mt-4">
                       <FileText className="w-5 h-5 text-primary" />
@@ -902,13 +899,12 @@ export const PlanosPage = () => {
                     Vista previa
                   </Button>
                   <Button
-                    variant="default"
+                    variant="outline"
                     size="sm"
-                    onClick={handleAddFile}
                     disabled={!uploadedFile}
+                    className="text-white"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Agregar
+                    Descripción
                   </Button>
                   <Button
                     variant="outline"
@@ -922,19 +918,22 @@ export const PlanosPage = () => {
                   </Button>
                 </div>
               </div>
-            </div>
-
-            {/* Upload File Button */}
-            <div className="flex justify-center">
-              <Button
-                variant="default"
-                size="lg"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => document.getElementById('file-upload-input')?.click()}
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Subir archivo
-              </Button>
+              
+              <div className="flex flex-col items-center justify-center gap-4 py-8">
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => document.getElementById('file-upload-input')?.click()}
+                >
+                  <Upload className="w-5 h-5 mr-2" />
+                  Subir archivo
+                </Button>
+                <p className="text-sm text-muted-foreground dark:text-gray-400 text-center">
+                  Arrastre su archivo DWG/PDF aquí o usa "Subir DWG/PDF" del TopBar
+                </p>
+              </div>
+              
               <input
                 id="file-upload-input"
                 type="file"
@@ -942,6 +941,18 @@ export const PlanosPage = () => {
                 className="hidden"
                 onChange={handleFileSelect}
               />
+            </div>
+
+            {/* Load Button */}
+            <div className="flex justify-end">
+              <Button
+                variant="default"
+                size="lg"
+                className="text-white"
+                disabled={uploadedPlanos.length === 0}
+              >
+                Cargar
+              </Button>
             </div>
 
             {/* Uploaded Files Table */}
