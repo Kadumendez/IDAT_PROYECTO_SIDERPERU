@@ -161,7 +161,7 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
                       key={subItem.id}
                       onClick={() => navigate(subItem.path)}
                       className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all text-left ${
-                        location.search.includes(`tab=${subItem.id}`) || (subItem.id === 'listado' && !location.search)
+                        location.search.includes(`tab=${subItem.id}`)
                           ? "bg-primary/5 dark:bg-red-500/5 text-primary dark:text-red-400"
                           : "text-muted-foreground dark:text-gray-500 hover:bg-muted/50 dark:hover:bg-slate-800/50"
                       }`}

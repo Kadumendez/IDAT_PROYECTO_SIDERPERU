@@ -58,10 +58,10 @@ const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => {
 type Plano = typeof MOCK_PLANOS[0];
 
 export const PlanosPage = () => {
-  // Get active tab from URL or default to listado
+  // Get active tab from URL
   const location = window.location;
   const searchParams = new URLSearchParams(location.search);
-  const activeTab = searchParams.get('tab') || 'listado';
+  const activeTab = searchParams.get('tab');
   
   const [searchTerm, setSearchTerm] = useState("");
   const [zonaFilter, setZonaFilter] = useState<string>("");
@@ -393,9 +393,48 @@ export const PlanosPage = () => {
   };
 
   return (
-    <DashboardLayout pageTitle={activeTab === 'cargas' ? 'Planos - Cargas' : 'Planos - Listado'}>
+    <DashboardLayout pageTitle={
+      activeTab === 'cargas' ? 'Planos - Cargas' : 
+      activeTab === 'listado' ? 'Planos - Listado' : 
+      'Planos'
+    }>
       <div className="p-8">
         <div className="max-w-[1600px] mx-auto">
+
+          {/* Main cards when no tab is selected */}
+          {!activeTab && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <button
+                onClick={() => window.location.href = '/planos?tab=listado'}
+                className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-primary dark:hover:border-red-500 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 dark:bg-red-500/10 flex items-center justify-center group-hover:bg-primary/20 dark:group-hover:bg-red-500/20 transition-all">
+                    <FileText className="w-8 h-8 text-primary dark:text-red-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Listado</h2>
+                  <p className="text-muted-foreground dark:text-gray-400 text-center">
+                    Ver y gestionar todos los planos del sistema
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => window.location.href = '/planos?tab=cargas'}
+                className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-primary dark:hover:border-red-500 transition-all hover:shadow-lg hover:scale-105"
+              >
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 dark:bg-red-500/10 flex items-center justify-center group-hover:bg-primary/20 dark:group-hover:bg-red-500/20 transition-all">
+                    <Upload className="w-8 h-8 text-primary dark:text-red-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground dark:text-gray-100">Cargas</h2>
+                  <p className="text-muted-foreground dark:text-gray-400 text-center">
+                    Cargar nuevos planos al sistema
+                  </p>
+                </div>
+              </button>
+            </div>
+          )}
 
           {activeTab === 'listado' && (
             <div className="space-y-6">
