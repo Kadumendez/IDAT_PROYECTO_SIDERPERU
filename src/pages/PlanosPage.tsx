@@ -1003,8 +1003,8 @@ export const PlanosPage = () => {
             </div>
 
             {/* Tabla */}
-            <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
-              <div ref={scrollRef} className="h-[600px] overflow-auto custom-scrollbar">
+            <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700">
+              <div ref={scrollRef} className="h-[600px] overflow-auto custom-scrollbar relative">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1470,8 +1470,8 @@ export const PlanosPage = () => {
                 </div>
               </div>
 
-              <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
-                <div className="h-[400px] overflow-auto custom-scrollbar">
+              <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700">
+                <div className="h-[400px] overflow-auto custom-scrollbar relative">
                   <Table>
                     <TableHeader>
                       <TableRow>
