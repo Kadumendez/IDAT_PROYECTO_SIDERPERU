@@ -214,7 +214,7 @@ export const RevisionesPage = () => {
           <div className="bg-card rounded-lg border border-border p-4">
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-4">
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Buscar
                 </label>
                 <div className="relative">
@@ -230,7 +230,7 @@ export const RevisionesPage = () => {
               </div>
               
               <div className="col-span-3">
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Zona
                 </label>
                 <Select value={zonaFilter} onValueChange={setZonaFilter}>
@@ -247,7 +247,7 @@ export const RevisionesPage = () => {
               </div>
 
               <div className="col-span-3">
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Empresa
                 </label>
                 <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
@@ -293,28 +293,28 @@ export const RevisionesPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Código</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Plano</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Empresa</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Zona</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Sistema</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Versión</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Fecha Carga</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Fecha Aprobación</TableHead>
-                    <TableHead className="font-semibold bg-background sticky top-0 z-10">Estado</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Código</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Plano</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Empresa</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Zona</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Sistema</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Versión</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Fecha Carga</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Fecha Aprobación</TableHead>
+                    <TableHead className="font-semibold text-foreground bg-background sticky top-0 z-10">Estado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedApprovedPlanos.map((plano) => (
                     <TableRow key={plano.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{plano.codigo}</TableCell>
-                      <TableCell>{plano.nombre}</TableCell>
-                      <TableCell>{plano.empresa}</TableCell>
-                      <TableCell>{plano.zona}</TableCell>
-                      <TableCell>{plano.sistema}</TableCell>
-                      <TableCell>v{plano.version}</TableCell>
-                      <TableCell>{format(new Date(plano.fechaCarga), 'dd/MM/yyyy', { locale: es })}</TableCell>
-                      <TableCell>{format(new Date(plano.fechaAprobacion), 'dd/MM/yyyy', { locale: es })}</TableCell>
+                      <TableCell className="font-medium text-foreground">{plano.codigo}</TableCell>
+                      <TableCell className="text-foreground">{plano.nombre}</TableCell>
+                      <TableCell className="text-foreground">{plano.empresa}</TableCell>
+                      <TableCell className="text-foreground">{plano.zona}</TableCell>
+                      <TableCell className="text-foreground">{plano.sistema}</TableCell>
+                      <TableCell className="text-foreground">v{plano.version}</TableCell>
+                      <TableCell className="text-foreground">{format(new Date(plano.fechaCarga), 'dd/MM/yyyy', { locale: es })}</TableCell>
+                      <TableCell className="text-foreground">{format(new Date(plano.fechaAprobacion), 'dd/MM/yyyy', { locale: es })}</TableCell>
                       <TableCell>
                         <div className={`${getStatusColor(plano.estado)} inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
                           {getStatusIcon(plano.estado)}

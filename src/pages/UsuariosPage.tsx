@@ -160,7 +160,7 @@ export const UsuariosPage = () => {
         <div className="bg-card rounded-lg border border-border p-4">
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-5">
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-2 block">
                 Buscar
               </label>
               <div className="relative">
@@ -176,7 +176,7 @@ export const UsuariosPage = () => {
             </div>
             
             <div className="col-span-3">
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-2 block">
                 Tipo de Usuario
               </label>
               <Select value={tipoFilter} onValueChange={setTipoFilter}>
@@ -193,7 +193,7 @@ export const UsuariosPage = () => {
             </div>
 
             <div className="col-span-3">
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-2 block">
                 Empresa
               </label>
               <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
