@@ -1006,10 +1006,10 @@ export const PlanosPage = () => {
             <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
               <ScrollArea ref={scrollRef} className="h-[600px] custom-scrollbar">
                 <Table>
-                  <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
+                  <TableHeader>
                     <TableRow>
                       <TableHead 
-                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('nombre')}
                       >
                         <div className="flex items-center gap-1">
@@ -1020,7 +1020,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('empresaResponsable')}
                       >
                         <div className="flex items-center gap-1">
@@ -1031,7 +1031,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('zona')}
                       >
                         <div className="flex items-center gap-1">
@@ -1042,7 +1042,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('subzona')}
                       >
                         <div className="flex items-center gap-1">
@@ -1053,7 +1053,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-muted/50 dark:bg-slate-700/50 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('sistema')}
                       >
                         <div className="flex items-center gap-1">
@@ -1063,9 +1063,10 @@ export const PlanosPage = () => {
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
-                      <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
-                      <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1126,6 +1127,9 @@ export const PlanosPage = () => {
                               {plano.estado}
                             </Badge>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-center text-foreground dark:text-gray-200">
+                          {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-3">
@@ -1469,17 +1473,17 @@ export const PlanosPage = () => {
               <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
                 <ScrollArea className="h-[400px] custom-scrollbar">
                   <Table>
-                    <TableHeader className="bg-muted/50 dark:bg-slate-700/50 sticky top-0 z-10">
+                    <TableHeader>
                       <TableRow>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Plano</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Empresa Responsable</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Zona</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Subzona</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Sistema</TableHead>
-                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Versión</TableHead>
-                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Estado</TableHead>
-                        <TableHead className="font-semibold bg-muted/50 dark:bg-slate-700/50">Actualizado</TableHead>
-                        <TableHead className="font-semibold text-center bg-muted/50 dark:bg-slate-700/50">Acciones</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Plano</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Empresa Responsable</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Zona</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Subzona</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Sistema</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1512,12 +1516,32 @@ export const PlanosPage = () => {
                         .map((plano) => (
                         <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
                           <TableCell>
-                            <div>
-                              <div className="font-semibold text-foreground dark:text-gray-100">
-                                {plano.nombre}
-                              </div>
-                              <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
-                                {plano.codigo}
+                            <div className="flex items-center gap-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center justify-center cursor-help flex-shrink-0">
+                                      <Info className="h-4 w-4 text-white hover:text-white/80 transition-colors" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <div className="space-y-1">
+                                      <p><strong>Fecha de carga:</strong> {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}</p>
+                                      <p><strong>Aprobador SiderPerú:</strong> {plano.aprobadorSiderPeru}</p>
+                                      <p><strong>Versión:</strong> {plano.version}</p>
+                                      <p><strong>Zona:</strong> {plano.zona}</p>
+                                      <p><strong>Sistema:</strong> {plano.sistema}</p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <div>
+                                <div className="font-semibold text-foreground dark:text-gray-100">
+                                  {plano.nombre}
+                                </div>
+                                <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
+                                  {plano.codigo}
+                                </div>
                               </div>
                             </div>
                           </TableCell>
@@ -1548,8 +1572,8 @@ export const PlanosPage = () => {
                               </Badge>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">
-                            {format(new Date(plano.actualizado), 'yyyy-MM-dd')}
+                          <TableCell className="text-sm text-center text-foreground dark:text-gray-200">
+                            {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-center gap-3">
