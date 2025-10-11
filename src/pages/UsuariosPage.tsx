@@ -96,9 +96,9 @@ export const UsuariosPage = () => {
   };
 
   const getUserBadgeColor = (tipo: string) => {
-    if (tipo === 'Admin SiderPerú') return 'bg-[#2a3a4a] border-[#60a5fa] text-[#60a5fa]';
-    if (tipo === 'Usuario SiderPerú') return 'bg-[#1a3a2a] border-[#34d399] text-[#34d399]';
-    return 'bg-[#3a3830] border-[#fbbf24] text-[#fbbf24]';
+    if (tipo === 'Admin SiderPerú') return 'bg-[#2a3a4a] border border-[#60a5fa] text-[#60a5fa]';
+    if (tipo === 'Usuario SiderPerú') return 'bg-[#1a3a2a] border border-[#34d399] text-[#34d399]';
+    return 'bg-[#3a3830] border border-[#fbbf24] text-[#fbbf24]';
   };
 
   const handleUserClick = (user: typeof MOCK_USERS[0]) => {
@@ -251,19 +251,19 @@ export const UsuariosPage = () => {
                       {user.email}
                     </CardDescription>
                   </div>
-                  <Badge className={`${getUserBadgeColor(user.tipo)} flex items-center gap-1 px-3 py-1 border rounded-lg font-medium text-xs`}>
+                  <Badge className={`${getUserBadgeColor(user.tipo)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs`}>
                     {user.tipo.includes('Admin') ? <Shield className="w-3 h-3" /> : <Users className="w-3 h-3" />}
                     {user.tipo.split(' ')[0]}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="text-sm">
-                  <strong>Empresa:</strong> {user.empresa}
+                <div className="text-sm text-foreground">
+                  <strong className="font-semibold">Empresa:</strong> {user.empresa}
                 </div>
                 {user.zonas.length > 0 && (
-                  <div className="text-sm">
-                    <strong>Zonas:</strong> {user.zonas.join(', ')}
+                  <div className="text-sm text-foreground">
+                    <strong className="font-semibold">Zonas:</strong> {user.zonas.join(', ')}
                   </div>
                 )}
                 {user.role !== 'admin' && (
@@ -285,22 +285,22 @@ export const UsuariosPage = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Tipo de Usuario</Label>
+              <Label className="text-foreground">Tipo de Usuario</Label>
               <RadioGroup value={userType} onValueChange={(value: any) => setUserType(value)}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="siderperu" id="siderperu" />
-                  <Label htmlFor="siderperu" className="cursor-pointer">Usuario SiderPerú</Label>
+                  <Label htmlFor="siderperu" className="cursor-pointer text-foreground">Usuario SiderPerú</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="tercero" id="tercero" />
-                  <Label htmlFor="tercero" className="cursor-pointer">Usuario Tercero</Label>
+                  <Label htmlFor="tercero" className="cursor-pointer text-foreground">Usuario Tercero</Label>
                 </div>
               </RadioGroup>
             </div>
 
             {userType === 'siderperu' ? (
               <div>
-                <Label>Seleccionar Trabajador</Label>
+                <Label className="text-foreground">Seleccionar Trabajador</Label>
                 <Select value={newUserData.trabajador} onValueChange={(value) => setNewUserData({...newUserData, trabajador: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar de lista..." />
@@ -315,7 +315,7 @@ export const UsuariosPage = () => {
             ) : (
               <>
                 <div>
-                  <Label>Empresa</Label>
+                  <Label className="text-foreground">Empresa</Label>
                   <Select value={newUserData.empresa} onValueChange={(value) => setNewUserData({...newUserData, empresa: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar empresa..." />
@@ -329,7 +329,7 @@ export const UsuariosPage = () => {
                 </div>
                 
                 <div>
-                  <Label>Nombre Completo</Label>
+                  <Label className="text-foreground">Nombre Completo</Label>
                   <Input 
                     placeholder="Ingrese nombre completo"
                     value={newUserData.nombre}
@@ -338,7 +338,7 @@ export const UsuariosPage = () => {
                 </div>
                 
                 <div>
-                  <Label>Email</Label>
+                  <Label className="text-foreground">Email</Label>
                   <Input 
                     type="email"
                     placeholder="usuario@empresa.com"
@@ -350,7 +350,7 @@ export const UsuariosPage = () => {
             )}
 
             <div className="bg-muted/50 p-3 rounded-lg text-sm">
-              <p className="font-medium mb-1">Notas importantes:</p>
+              <p className="font-medium mb-1 text-foreground">Notas importantes:</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>Usuarios SiderPerú pueden crear usuarios de otras empresas</li>
                 <li>Requiere autorización del admin a cargo</li>
@@ -379,12 +379,12 @@ export const UsuariosPage = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-muted/50 p-3 rounded-lg">
-              <p className="text-sm font-medium">Usuario: {selectedUser?.nombre}</p>
+              <p className="text-sm font-medium text-foreground">Usuario: {selectedUser?.nombre}</p>
               <p className="text-sm text-muted-foreground">Empresa: {selectedUser?.empresa}</p>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
-              <span className="font-medium">Seleccionar todos los planos</span>
+              <span className="font-medium text-foreground">Seleccionar todos los planos</span>
               <Checkbox 
                 checked={selectedPlanos.length === AVAILABLE_PLANOS.length}
                 onCheckedChange={handleSelectAll}
@@ -392,13 +392,13 @@ export const UsuariosPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-base">Planos Disponibles</Label>
+              <Label className="text-base text-foreground">Planos Disponibles</Label>
               <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
                 {AVAILABLE_PLANOS.map((plano) => (
                   <div key={plano.id} className="p-3 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="font-medium">{plano.codigo} - {plano.nombre}</p>
+                        <p className="font-medium text-foreground">{plano.codigo} - {plano.nombre}</p>
                         <p className="text-sm text-muted-foreground">Zona: {plano.zona}</p>
                       </div>
                       <Checkbox 
@@ -414,7 +414,7 @@ export const UsuariosPage = () => {
             {selectedPlanos.length > 0 && (
               <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                <span className="font-medium">{selectedPlanos.length} plano(s) seleccionado(s)</span>
+                <span className="font-medium text-foreground">{selectedPlanos.length} plano(s) seleccionado(s)</span>
               </div>
             )}
             

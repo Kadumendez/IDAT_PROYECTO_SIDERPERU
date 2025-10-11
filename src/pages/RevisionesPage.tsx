@@ -132,13 +132,13 @@ export const RevisionesPage = () => {
   const getStatusColor = (estado: string) => {
     switch (estado) {
       case 'APROBADO':
-        return 'bg-[#1a3a2a] border-[#34d399] text-[#34d399]';
+        return 'bg-[#1a3a2a] border border-[#34d399] text-[#34d399]';
       case 'PENDIENTE':
-        return 'bg-[#3a3830] border-[#fbbf24] text-[#fbbf24]';
+        return 'bg-[#3a3830] border border-[#fbbf24] text-[#fbbf24]';
       case 'COMENTADO':
-        return 'bg-[#2a3a4a] border-[#60a5fa] text-[#60a5fa]';
+        return 'bg-[#2a3a4a] border border-[#60a5fa] text-[#60a5fa]';
       default:
-        return 'bg-[#3a2a2a] border-[#f87171] text-[#f87171]';
+        return 'bg-[#3a2a2a] border border-[#f87171] text-[#f87171]';
     }
   };
 
@@ -187,19 +187,19 @@ export const RevisionesPage = () => {
                         {review.zona}
                       </CardDescription>
                     </div>
-                    <Badge className={`${getStatusColor('PENDIENTE')} flex items-center gap-1 px-3 py-1 border rounded-lg font-medium`}>
+                    <Badge className={`${getStatusColor('PENDIENTE')} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
                       {getStatusIcon('PENDIENTE')}
                       {review.planos.length} plano{review.planos.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    <strong>Aprobador:</strong> {review.aprobador}
-                  </div>
-                  <div className="text-xs text-muted-foreground border-t pt-2">
-                    Haz clic para ver opciones de edición
-                  </div>
+                <div className="text-sm text-muted-foreground">
+                  <strong className="text-foreground font-semibold">Aprobador:</strong> {review.aprobador}
+                </div>
+                <div className="text-xs text-muted-foreground border-t pt-2">
+                  Haz clic para ver opciones de edición
+                </div>
                 </CardContent>
               </Card>
             ))}
@@ -316,10 +316,10 @@ export const RevisionesPage = () => {
                       <TableCell>{format(new Date(plano.fechaCarga), 'dd/MM/yyyy', { locale: es })}</TableCell>
                       <TableCell>{format(new Date(plano.fechaAprobacion), 'dd/MM/yyyy', { locale: es })}</TableCell>
                       <TableCell>
-                        <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1 px-3 py-1 border rounded-lg font-medium w-fit`}>
+                        <div className={`${getStatusColor(plano.estado)} inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
                           {getStatusIcon(plano.estado)}
-                          {plano.estado}
-                        </Badge>
+                          <span>{plano.estado}</span>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -341,7 +341,7 @@ export const RevisionesPage = () => {
               <div key={plano.id} className="p-4 border rounded-lg space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="font-semibold">{plano.nombre}</h4>
+                    <h4 className="font-semibold text-foreground">{plano.nombre}</h4>
                     <p className="text-sm text-muted-foreground">
                       {plano.zona} • {plano.subzona} • {plano.sistema} • v{plano.version}
                     </p>
@@ -392,7 +392,7 @@ export const RevisionesPage = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Estado</Label>
+              <Label className="text-foreground">Estado</Label>
               <Select value={statusData.estado} onValueChange={(value) => setStatusData({...statusData, estado: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />
@@ -406,7 +406,7 @@ export const RevisionesPage = () => {
             </div>
             
             <div>
-              <Label>Comentarios</Label>
+              <Label className="text-foreground">Comentarios</Label>
               <Textarea
                 placeholder="Ingrese comentarios..."
                 value={statusData.comentarios}
@@ -431,9 +431,9 @@ export const RevisionesPage = () => {
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar Plano</DialogTitle>
+            <DialogTitle className="text-foreground">Eliminar Plano</DialogTitle>
           </DialogHeader>
-          <p>¿Estás seguro de que deseas eliminar este plano? Esta acción no se puede deshacer.</p>
+          <p className="text-foreground">¿Estás seguro de que deseas eliminar este plano? Esta acción no se puede deshacer.</p>
           <div className="flex gap-2 justify-end mt-4">
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
               Cancelar
@@ -449,11 +449,11 @@ export const RevisionesPage = () => {
       <Dialog open={showRenameModal} onOpenChange={setShowRenameModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Renombrar Plano</DialogTitle>
+            <DialogTitle className="text-foreground">Renombrar Plano</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nuevo nombre</Label>
+              <Label className="text-foreground">Nuevo nombre</Label>
               <Input placeholder="Ingrese el nuevo nombre" />
             </div>
             <div className="flex gap-2 justify-end">
