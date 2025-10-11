@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit, Info, Check, ArrowUpDown, BarChart3, History } from "lucide-react";
+import { UploadPlanoModal } from "@/components/UploadPlanoModal";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -117,6 +118,7 @@ export const PlanosPage = () => {
   
   // Cargas tab state - 20 ejemplos iniciales
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadedPlanos, setUploadedPlanos] = useState<any[]>([
     {
       id: 1,
@@ -673,8 +675,68 @@ export const PlanosPage = () => {
 
   const handleAddFile = () => {
     if (uploadedFile) {
-      setShowUploadForm(true);
+      setUploadModalOpen(true);
     }
+  };
+
+  const handleConfirmUpload = (data: any) => {
+    if (!uploadedFile) return;
+
+    const aprobadores = ['Ing. Carlos Mendoza', 'Ing. María Torres', 'Ing. Juan Pérez'];
+    let newPlano;
+
+    if (data.tipo === 'nuevo') {
+      // Crear nuevo plano
+      newPlano = {
+        id: uploadedPlanos.length + 1,
+        codigo: `PL-${String(uploadedPlanos.length + 1).padStart(4, '0')}`,
+        nombre: data.nombre,
+        empresaResponsable: 'Mi Empresa',
+        zona: data.zona,
+        subzona: data.subzona,
+        sistema: data.sistema,
+        unidadMedida: 'mm',
+        version: 1,
+        isActual: true,
+        estado: 'APROBADO',
+        actualizado: new Date().toISOString(),
+        aprobadorSiderPeru: aprobadores[uploadedPlanos.length % 3],
+        file: uploadedFile
+      };
+    } else {
+      // Crear nueva versión
+      const nuevaVersion = (data.planoExistente.version || 1) + 1;
+      newPlano = {
+        id: uploadedPlanos.length + 1,
+        codigo: `PL-${String(uploadedPlanos.length + 1).padStart(4, '0')}`,
+        nombre: data.planoExistente.nombre,
+        empresaResponsable: 'Mi Empresa',
+        zona: data.zona,
+        subzona: data.subzona,
+        sistema: data.sistema,
+        unidadMedida: 'mm',
+        version: nuevaVersion,
+        isActual: true,
+        estado: 'APROBADO',
+        actualizado: new Date().toISOString(),
+        aprobadorSiderPeru: aprobadores[uploadedPlanos.length % 3],
+        file: uploadedFile
+      };
+
+      // Marcar versiones anteriores como no actuales
+      setUploadedPlanos(prev => 
+        prev.map(p => 
+          p.nombre === data.planoExistente.nombre 
+            ? { ...p, isActual: false }
+            : p
+        )
+      );
+    }
+
+    setUploadedPlanos(prev => [newPlano, ...prev]);
+    setUploadModalOpen(false);
+    setUploadedFile(null);
+    console.log('✓ Archivo subido exitosamente');
   };
 
   const handleSaveUpload = () => {
@@ -1218,14 +1280,13 @@ export const PlanosPage = () => {
                     Vista previa
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={handleAddFile}
                     disabled={!uploadedFile}
-                    className="text-white"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Agregar descripción
+                    <Upload className="w-4 h-4 mr-2" />
+                    Agregar a la plataforma
                   </Button>
                   <Button
                     variant="outline"
@@ -1635,6 +1696,21 @@ export const PlanosPage = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Upload Plano Modal */}
+        <UploadPlanoModal
+          open={uploadModalOpen}
+          onOpenChange={setUploadModalOpen}
+          fileName={uploadedFile?.name || ''}
+          onConfirm={handleConfirmUpload}
+          existingPlanos={uploadedPlanos.map(p => ({
+            nombre: p.nombre,
+            version: p.version,
+            zona: p.zona,
+            subzona: p.subzona,
+            sistema: p.sistema
+          }))}
+        />
 
         {/* Upload Form Modal */}
         <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
