@@ -120,6 +120,11 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
     { id: "usuarios", icon: Users, label: "Usuarios y Roles", path: "/usuarios" }
   ];
 
+  const bottomMenuItems = [
+    { id: "notificaciones", icon: Bell, label: "Notificaciones", path: "/notificaciones" },
+    { id: "configuracion", icon: Settings, label: "Configuración", path: "/configuracion" }
+  ];
+
   const handleMenuClick = (itemId: string, path: string) => {
     setActiveRoute(itemId);
     if (path !== "#") {
@@ -175,6 +180,24 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
             </div>
           ))}
         </nav>
+
+        {/* Bottom Menu Items */}
+        <div className="p-4 border-t border-border dark:border-slate-800 space-y-2">
+          {bottomMenuItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => handleMenuClick(item.id, item.path)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left ${
+                activeRoute === item.id
+                  ? "bg-primary/10 dark:bg-red-500/10 text-primary dark:text-red-400 border border-primary/20 dark:border-red-500/20"
+                  : "text-muted-foreground dark:text-gray-400 hover:bg-muted dark:hover:bg-slate-800"
+              }`}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
       </aside>
 
       {/* Main Content */}

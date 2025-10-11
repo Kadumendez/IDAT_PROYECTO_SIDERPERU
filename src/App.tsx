@@ -12,6 +12,8 @@ import { RevisionesPage } from "./pages/RevisionesPage";
 import { UsuariosPage } from "./pages/UsuariosPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { UploadsPage } from "./pages/UploadsPage";
+import { ConfiguracionPage } from "./pages/ConfiguracionPage";
+import { NotificacionesPage } from "./pages/NotificacionesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +72,22 @@ const App = () => (
           element={
             <ProtectedRoute>
               <UploadsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/configuracion" 
+          element={
+            <ProtectedRoute>
+              <ConfiguracionPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/notificaciones" 
+          element={
+            <ProtectedRoute>
+              <NotificacionesPage />
             </ProtectedRoute>
           } 
         />

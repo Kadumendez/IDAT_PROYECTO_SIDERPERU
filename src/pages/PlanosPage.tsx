@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit, Info, Check, ArrowUpDown, BarChart3, History } from "lucide-react";
+import { Download, Eye, Pencil, Search, Calendar as CalendarIcon, X, Upload, FileText, Plus, Trash2, Save, Settings, Shield, FileX, FileEdit, Info, Check, ArrowUpDown, BarChart3, History, CheckCircle, Clock, AlertCircle, XCircle } from "lucide-react";
 import { UploadPlanoModal } from "@/components/UploadPlanoModal";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -529,16 +529,29 @@ export const PlanosPage = () => {
     }
   }, [visibleCount, filteredPlanos.length]);
 
-  const getEstadoNeonStyle = (estado: string) => {
+  const getStatusIcon = (estado: string) => {
     switch (estado) {
-      case 'PENDIENTE': 
-        return 'border-[#f97316] text-[#f97316] bg-transparent shadow-[0_0_8px_rgba(249,115,22,0.5)]';
-      case 'APROBADO': 
-        return 'border-[#10b981] text-[#10b981] bg-transparent shadow-[0_0_8px_rgba(16,185,129,0.5)]';
-      case 'COMENTADO': 
-        return 'border-[#eab308] text-[#eab308] bg-transparent shadow-[0_0_8px_rgba(234,179,8,0.5)]';
-      default: 
-        return 'border-gray-400 text-gray-400 bg-transparent';
+      case 'APROBADO':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'PENDIENTE':
+        return <Clock className="w-4 h-4" />;
+      case 'COMENTADO':
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <XCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (estado: string) => {
+    switch (estado) {
+      case 'APROBADO':
+        return 'bg-[#1a3a2a] border border-[#34d399] text-[#34d399]';
+      case 'PENDIENTE':
+        return 'bg-[#3a3830] border border-[#fbbf24] text-[#fbbf24]';
+      case 'COMENTADO':
+        return 'bg-[#2a3a4a] border border-[#60a5fa] text-[#60a5fa]';
+      default:
+        return 'bg-[#3a2a2a] border border-[#f87171] text-[#f87171]';
     }
   };
 
@@ -1185,10 +1198,8 @@ export const PlanosPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center">
-                            <Badge 
-                              variant="outline"
-                              className={cn("font-medium border-2", getEstadoNeonStyle(plano.estado))}
-                            >
+                            <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
+                              {getStatusIcon(plano.estado)}
                               {plano.estado}
                             </Badge>
                           </div>
@@ -1577,6 +1588,7 @@ export const PlanosPage = () => {
                           return matchesSearch && matchesZona && matchesSubzona && matchesSistema && 
                                  matchesVersion && matchesEstado && matchesAprobador && matchesDate;
                         })
+                        .sort((a, b) => new Date(b.actualizado).getTime() - new Date(a.actualizado).getTime())
                         .map((plano) => (
                         <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
                           <TableCell>
@@ -1628,10 +1640,8 @@ export const PlanosPage = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-center">
-                              <Badge 
-                                variant="outline"
-                                className={cn("font-medium border-2", getEstadoNeonStyle(plano.estado))}
-                              >
+                              <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
+                                {getStatusIcon(plano.estado)}
                                 {plano.estado}
                               </Badge>
                             </div>
