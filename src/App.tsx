@@ -8,6 +8,8 @@ import { EmailSentPage } from "./pages/EmailSentPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { PlanosPage } from "./pages/PlanosPage";
+import { RevisionesPage } from "./pages/RevisionesPage";
+import { UsuariosPage } from "./pages/UsuariosPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { UploadsPage } from "./pages/UploadsPage";
 import NotFound from "./pages/NotFound";
@@ -36,6 +38,22 @@ const App = () => (
           element={
             <ProtectedRoute>
               <PlanosPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/revisiones" 
+          element={
+            <ProtectedRoute>
+              <RevisionesPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/usuarios" 
+          element={
+            <ProtectedRoute>
+              <UsuariosPage />
             </ProtectedRoute>
           } 
         />

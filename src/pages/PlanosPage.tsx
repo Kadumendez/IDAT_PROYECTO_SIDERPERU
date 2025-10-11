@@ -474,9 +474,12 @@ export const PlanosPage = () => {
            matchesVersion && matchesEstado && matchesDate;
   });
 
-  // Sort planos
+  // Sort planos - default by most recent date
   const sortedPlanos = [...filteredPlanos].sort((a, b) => {
-    if (!sortColumn) return 0;
+    if (!sortColumn) {
+      // Default: sort by date (most recent first)
+      return new Date(b.fechaSubida).getTime() - new Date(a.fechaSubida).getTime();
+    }
     
     let aValue = a[sortColumn as keyof typeof a];
     let bValue = b[sortColumn as keyof typeof b];

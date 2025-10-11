@@ -30,6 +30,7 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
   const currentUser = getCurrentUser() || "";
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [isAIChatMinimized, setIsAIChatMinimized] = useState(false);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -115,8 +116,8 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
         { id: "cargas", label: "Cargas", path: "/planos?tab=cargas" }
       ]
     },
-    { id: "revisiones", icon: FileCheck, label: "Revisiones", path: "#" },
-    { id: "usuarios", icon: Users, label: "Usuarios y Roles", path: "#" }
+    { id: "revisiones", icon: FileCheck, label: "Revisiones", path: "/revisiones" },
+    { id: "usuarios", icon: Users, label: "Usuarios y Roles", path: "/usuarios" }
   ];
 
   const handleMenuClick = (itemId: string, path: string) => {
@@ -211,10 +212,70 @@ export const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) =
               {getCurrentUserName()}
             </span>
             
-            <button className="relative p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-all">
-              <Bell className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-all"
+              >
+                <Bell className="w-5 h-5 text-muted-foreground dark:text-gray-400" />
+                <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-bold">3</span>
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-card dark:bg-slate-800 rounded-xl shadow-lg border border-border dark:border-slate-700 py-2 z-50 max-h-96 overflow-y-auto">
+                  <div className="px-4 py-2 border-b border-border">
+                    <h3 className="font-semibold text-foreground">Notificaciones</h3>
+                  </div>
+                  
+                  <div className="divide-y divide-border">
+                    <div className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">Nuevo plano para aprobación</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Constructora ABC ha subido "Planta General Acería" para revisión
+                          </p>
+                          <span className="text-xs text-muted-foreground mt-1 block">Hace 5 minutos</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">Plano pendiente de aprobación</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Ingeniería XYZ espera aprobación de "Sistema Transportador"
+                          </p>
+                          <span className="text-xs text-muted-foreground mt-1 block">Hace 2 horas</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">Solicitud de revisión urgente</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Grupo Industrial solicita revisión urgente de plano de fundición
+                          </p>
+                          <span className="text-xs text-muted-foreground mt-1 block">Hace 4 horas</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2 border-t border-border">
+                    <button className="text-sm text-primary hover:underline w-full text-center">
+                      Ver todas las notificaciones
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div 
               className="relative user-menu-container"
