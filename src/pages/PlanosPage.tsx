@@ -1006,10 +1006,10 @@ export const PlanosPage = () => {
             <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
               <div ref={scrollRef} className="h-[600px] overflow-auto custom-scrollbar">
                 <Table>
-                  <TableHeader className="sticky top-0 z-10">
+                  <TableHeader>
                     <TableRow>
                       <TableHead 
-                        className="font-semibold bg-background dark:bg-slate-800 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('nombre')}
                       >
                         <div className="flex items-center gap-1">
@@ -1020,7 +1020,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-background dark:bg-slate-800 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('empresaResponsable')}
                       >
                         <div className="flex items-center gap-1">
@@ -1031,7 +1031,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-background dark:bg-slate-800 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('zona')}
                       >
                         <div className="flex items-center gap-1">
@@ -1042,7 +1042,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-background dark:bg-slate-800 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('subzona')}
                       >
                         <div className="flex items-center gap-1">
@@ -1053,7 +1053,7 @@ export const PlanosPage = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="font-semibold bg-background dark:bg-slate-800 cursor-pointer hover:bg-muted/70"
+                        className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
                         onClick={() => handleSort('sistema')}
                       >
                         <div className="flex items-center gap-1">
@@ -1063,10 +1063,10 @@ export const PlanosPage = () => {
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Versión</TableHead>
-                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Estado</TableHead>
-                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Fecha de Carga</TableHead>
-                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Acciones</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
+                      <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1473,17 +1473,17 @@ export const PlanosPage = () => {
               <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
                 <div className="h-[400px] overflow-auto custom-scrollbar">
                   <Table>
-                    <TableHeader className="sticky top-0 z-10">
+                    <TableHeader>
                       <TableRow>
-                        <TableHead className="font-semibold bg-background dark:bg-slate-800">Plano</TableHead>
-                        <TableHead className="font-semibold bg-background dark:bg-slate-800">Empresa Responsable</TableHead>
-                        <TableHead className="font-semibold bg-background dark:bg-slate-800">Zona</TableHead>
-                        <TableHead className="font-semibold bg-background dark:bg-slate-800">Subzona</TableHead>
-                        <TableHead className="font-semibold bg-background dark:bg-slate-800">Sistema</TableHead>
-                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Versión</TableHead>
-                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Estado</TableHead>
-                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Fecha de Carga</TableHead>
-                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800">Acciones</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Plano</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Empresa Responsable</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Zona</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Subzona</TableHead>
+                        <TableHead className="font-semibold bg-background dark:bg-slate-800 sticky top-0 z-10">Sistema</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
+                        <TableHead className="font-semibold text-center bg-background dark:bg-slate-800 sticky top-0 z-10">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
