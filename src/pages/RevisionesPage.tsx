@@ -94,8 +94,8 @@ export const RevisionesPage = () => {
   
   // Filters for approved table
   const [searchTerm, setSearchTerm] = useState("");
-  const [zonaFilter, setZonaFilter] = useState("");
-  const [empresaFilter, setEmpresaFilter] = useState("");
+  const [zonaFilter, setZonaFilter] = useState("all");
+  const [empresaFilter, setEmpresaFilter] = useState("all");
   
   const [statusData, setStatusData] = useState({
     estado: "",
@@ -147,8 +147,8 @@ export const RevisionesPage = () => {
     const matchesSearch = searchTerm === "" || 
       plano.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       plano.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesZona = !zonaFilter || plano.zona === zonaFilter;
-    const matchesEmpresa = !empresaFilter || plano.empresa === empresaFilter;
+    const matchesZona = !zonaFilter || zonaFilter === "all" || plano.zona === zonaFilter;
+    const matchesEmpresa = !empresaFilter || empresaFilter === "all" || plano.empresa === empresaFilter;
     
     return matchesSearch && matchesZona && matchesEmpresa;
   });
@@ -238,7 +238,7 @@ export const RevisionesPage = () => {
                     <SelectValue placeholder="Todas las zonas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las zonas</SelectItem>
+                    <SelectItem value="all">Todas las zonas</SelectItem>
                     <SelectItem value="Laminados">Laminados</SelectItem>
                     <SelectItem value="Fundición">Fundición</SelectItem>
                     <SelectItem value="Galvanizado">Galvanizado</SelectItem>
@@ -255,7 +255,7 @@ export const RevisionesPage = () => {
                     <SelectValue placeholder="Todas las empresas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas las empresas</SelectItem>
+                    <SelectItem value="all">Todas las empresas</SelectItem>
                     <SelectItem value="Constructora ABC">Constructora ABC</SelectItem>
                     <SelectItem value="Ingeniería XYZ">Ingeniería XYZ</SelectItem>
                     <SelectItem value="Grupo Industrial">Grupo Industrial</SelectItem>
@@ -268,8 +268,8 @@ export const RevisionesPage = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchTerm("");
-                    setZonaFilter("");
-                    setEmpresaFilter("");
+                    setZonaFilter("all");
+                    setEmpresaFilter("all");
                   }}
                   className="w-full"
                 >

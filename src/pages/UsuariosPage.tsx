@@ -77,8 +77,8 @@ export const UsuariosPage = () => {
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [tipoFilter, setTipoFilter] = useState("");
-  const [empresaFilter, setEmpresaFilter] = useState("");
+  const [tipoFilter, setTipoFilter] = useState("all");
+  const [empresaFilter, setEmpresaFilter] = useState("all");
   
   // Create user form
   const [userType, setUserType] = useState<'siderperu' | 'tercero'>('siderperu');
@@ -130,8 +130,8 @@ export const UsuariosPage = () => {
     const matchesSearch = searchTerm === "" || 
       user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTipo = !tipoFilter || user.tipo === tipoFilter;
-    const matchesEmpresa = !empresaFilter || user.empresa === empresaFilter;
+    const matchesTipo = !tipoFilter || tipoFilter === "all" || user.tipo === tipoFilter;
+    const matchesEmpresa = !empresaFilter || empresaFilter === "all" || user.empresa === empresaFilter;
     
     return matchesSearch && matchesTipo && matchesEmpresa;
   });
@@ -184,7 +184,7 @@ export const UsuariosPage = () => {
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
                   <SelectItem value="Admin SiderPerú">Admin SiderPerú</SelectItem>
                   <SelectItem value="Usuario SiderPerú">Usuario SiderPerú</SelectItem>
                   <SelectItem value="Usuario Tercero">Usuario Tercero</SelectItem>
@@ -201,7 +201,7 @@ export const UsuariosPage = () => {
                   <SelectValue placeholder="Todas las empresas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las empresas</SelectItem>
+                  <SelectItem value="all">Todas las empresas</SelectItem>
                   <SelectItem value="SiderPerú">SiderPerú</SelectItem>
                   <SelectItem value="Constructora ABC">Constructora ABC</SelectItem>
                   <SelectItem value="Ingeniería XYZ">Ingeniería XYZ</SelectItem>
@@ -214,8 +214,8 @@ export const UsuariosPage = () => {
                 variant="outline"
                 onClick={() => {
                   setSearchTerm("");
-                  setTipoFilter("");
-                  setEmpresaFilter("");
+                  setTipoFilter("all");
+                  setEmpresaFilter("all");
                 }}
                 className="w-full"
               >
