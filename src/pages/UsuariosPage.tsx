@@ -180,7 +180,8 @@ export const UsuariosPage = () => {
   const [permDateTo, setPermDateTo] = useState<Date>();
   
   // Permission management states
-  const [versionOption, setVersionOption] = useState<'todas' | 'especificar'>('todas');
+  const [versionOption, setVersionOption] = useState<'todas' | 'especifica'>('todas');
+  const [versionSpecType, setVersionSpecType] = useState<'actual' | 'historica'>('actual');
   const [versionesEspecificas, setVersionesEspecificas] = useState("");
   const [tiempoUnidad, setTiempoUnidad] = useState("meses");
   const [tiempoCantidad, setTiempoCantidad] = useState("");
@@ -774,89 +775,89 @@ export const UsuariosPage = () => {
               {/* Same Filters */}
               <div className="bg-card rounded-lg border border-border p-4">
                 <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-3">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Buscar
-                    </label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Buscar plano..."
-                        value={permSearchTerm}
-                        onChange={(e) => setPermSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+                <div className="col-span-3">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Buscar
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar plano..."
+                      value={permSearchTerm}
+                      onChange={(e) => setPermSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                  
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Zona
-                    </label>
-                    <Select value={permZonaFilter} onValueChange={setPermZonaFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="Laminados">Laminados</SelectItem>
-                        <SelectItem value="Fundición">Fundición</SelectItem>
-                        <SelectItem value="Galvanizado">Galvanizado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                </div>
+                
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Zona
+                  </label>
+                  <Select value={permZonaFilter} onValueChange={setPermZonaFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="Laminados">Laminados</SelectItem>
+                      <SelectItem value="Fundición">Fundición</SelectItem>
+                      <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Subzona
-                    </label>
-                    <Select value={permSubzonaFilter} onValueChange={setPermSubzonaFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="Zona A">Zona A</SelectItem>
-                        <SelectItem value="Zona B">Zona B</SelectItem>
-                        <SelectItem value="Zona C">Zona C</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Subzona
+                  </label>
+                  <Select value={permSubzonaFilter} onValueChange={setPermSubzonaFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="Zona A">Zona A</SelectItem>
+                      <SelectItem value="Zona B">Zona B</SelectItem>
+                      <SelectItem value="Zona C">Zona C</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Sistema
-                    </label>
-                    <Select value={permSistemaFilter} onValueChange={setPermSistemaFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="Eléctrico">Eléctrico</SelectItem>
-                        <SelectItem value="Hidráulico">Hidráulico</SelectItem>
-                        <SelectItem value="Estructuras">Estructuras</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Sistema
+                  </label>
+                  <Select value={permSistemaFilter} onValueChange={setPermSistemaFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                      <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                      <SelectItem value="Estructuras">Estructuras</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Estado
-                    </label>
-                    <Select value={permEstadoFilter} onValueChange={setPermEstadoFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="APROBADO">Aprobado</SelectItem>
-                        <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-                        <SelectItem value="COMENTADO">Comentado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Estado
+                  </label>
+                  <Select value={permEstadoFilter} onValueChange={setPermEstadoFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="APROBADO">Aprobado</SelectItem>
+                      <SelectItem value="PENDIENTE">Pendiente</SelectItem>
+                      <SelectItem value="COMENTADO">Comentado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                   <div className="col-span-1 flex items-end">
                     <Button
@@ -869,83 +870,83 @@ export const UsuariosPage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-12 gap-4 mt-4">
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Versión
-                    </label>
-                    <Select value={permVersionFilter} onValueChange={setPermVersionFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="1">v1</SelectItem>
-                        <SelectItem value="2">v2</SelectItem>
-                        <SelectItem value="3">v3</SelectItem>
-                        <SelectItem value="4">v4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Fecha desde
-                    </label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !permDateFrom && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {permDateFrom ? format(permDateFrom, "dd/MM/yyyy") : "Seleccionar"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={permDateFrom}
-                          onSelect={setPermDateFrom}
-                          initialFocus
-                          locale={es}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-white mb-2 block">
-                      Fecha hasta
-                    </label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !permDateTo && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {permDateTo ? format(permDateTo, "dd/MM/yyyy") : "Seleccionar"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={permDateTo}
-                          onSelect={setPermDateTo}
-                          initialFocus
-                          locale={es}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+              <div className="grid grid-cols-12 gap-4 mt-4">
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Versión
+                  </label>
+                  <Select value={permVersionFilter} onValueChange={setPermVersionFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="1">v1</SelectItem>
+                      <SelectItem value="2">v2</SelectItem>
+                      <SelectItem value="3">v3</SelectItem>
+                      <SelectItem value="4">v4</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Fecha desde
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !permDateFrom && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {permDateFrom ? format(permDateFrom, "dd/MM/yyyy") : "Seleccionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={permDateFrom}
+                        onSelect={setPermDateFrom}
+                        initialFocus
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-black mb-2 block">
+                    Fecha hasta
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !permDateTo && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {permDateTo ? format(permDateTo, "dd/MM/yyyy") : "Seleccionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={permDateTo}
+                        onSelect={setPermDateTo}
+                        initialFocus
+                        locale={es}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
               </div>
 
               {/* Planos Selection */}
@@ -997,18 +998,38 @@ export const UsuariosPage = () => {
                   </Button>
                   <Button
                     type="button"
-                    variant={versionOption === 'especificar' ? 'default' : 'outline'}
-                    onClick={() => setVersionOption('especificar')}
+                    variant={versionOption === 'especifica' ? 'default' : 'outline'}
+                    onClick={() => setVersionOption('especifica')}
                   >
                     Especificar
                   </Button>
                 </div>
-                {versionOption === 'especificar' && (
-                  <Input
-                    placeholder="Ej: 1, 2, 3"
-                    value={versionesEspecificas}
-                    onChange={(e) => setVersionesEspecificas(e.target.value)}
-                  />
+                {versionOption === 'especifica' && (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={versionSpecType === 'actual' ? 'default' : 'outline'}
+                        onClick={() => setVersionSpecType('actual')}
+                        className="flex-1"
+                      >
+                        Actual
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={versionSpecType === 'historica' ? 'default' : 'outline'}
+                        onClick={() => setVersionSpecType('historica')}
+                        className="flex-1"
+                      >
+                        Histórica
+                      </Button>
+                    </div>
+                    <Input
+                      placeholder="Ej: 1, 2, 3"
+                      value={versionesEspecificas}
+                      onChange={(e) => setVersionesEspecificas(e.target.value)}
+                    />
+                  </div>
                 )}
               </div>
 
