@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { es, tr } from "date-fns/locale";
+import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { fetchUsuarios } from "@/components/supabase/users";
 import { supabase } from '@/lib/supabaseClient'
@@ -89,6 +89,15 @@ const AVAILABLE_PLANOS = [
   },
 ];
 
+// Constante editable para las zonas
+const ZONAS_OPTIONS = [
+  { value: "A", label: "Zona A" },
+  { value: "B", label: "Zona B" },
+  { value: "C", label: "Zona C" },
+  { value: "D", label: "Zona D" },
+  { value: "E", label: "Zona E" },
+];
+
 // Helper functions para estados
 const getStatusIcon = (estado: string) => {
   switch (estado) {
@@ -151,9 +160,13 @@ export const UsuariosPage = () => {
   const [newUserData, setNewUserData] = useState({
     nombre: '',
     email: '',
-    empresa: '',
+    empresa: 'SiderPerú',
     trabajador: '',
+    role: '',
+    tipo: 'Usuario SiderPerú',
+    zonas: [] as string[],
   });
+  const [selectedZonas, setSelectedZonas] = useState<string[]>([]);
 
   const getUserIcon = (tipo: string) => {
     if (tipo === 'Admin SiderPerú') return <Shield className="w-5 h-5" />;
@@ -242,6 +255,29 @@ export const UsuariosPage = () => {
     };
     cargarUsuarios();
   }, []);
+
+  // MultiDropdown handler
+  const handleZonaCheckbox = (value: string) => {
+    setSelectedZonas((prev) =>
+      prev.includes(value)
+        ? prev.filter((z) => z !== value)
+        : [...prev, value]
+    );
+    setNewUserData((prev) => ({
+      ...prev,
+      zonas: prev.zonas.includes(value)
+        ? prev.zonas.filter((z: string) => z !== value)
+        : [...prev.zonas, value],
+    }));
+  };
+
+  // Sincronizar selectedZonas con newUserData.zonas
+  useEffect(() => {
+    setNewUserData((prev) => ({
+      ...prev,
+      zonas: selectedZonas,
+    }));
+  }, [selectedZonas]);
 
   return (
     <DashboardLayout pageTitle="Usuarios y Roles">
@@ -368,7 +404,7 @@ export const UsuariosPage = () => {
                 <div className="text-sm text-foreground">
                   <strong className="font-semibold">Empresa:</strong> {user.empresa}
                 </div>
-                {user.zonas.length > 0 && (
+                {user.zonas && user.zonas.length > 0 && (
                   <div className="text-sm text-foreground">
                     <strong className="font-semibold">Zonas:</strong> {user.zonas.join(', ')}
                   </div>
@@ -391,9 +427,31 @@ export const UsuariosPage = () => {
             <DialogTitle>Crear Nuevo Usuario</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Tipo de Usuario */}
             <div>
               <Label className="text-foreground">Tipo de Usuario</Label>
-              <RadioGroup value={userType} onValueChange={(value: any) => setUserType(value)}>
+              <RadioGroup
+                value={userType}
+                onValueChange={(value: any) => {
+                  if (value === "siderperu") {
+                    setUserType("siderperu");
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      tipo: "Usuario SiderPerú",
+                      empresa: "SiderPerú",
+                      role: prev.role === "admin" ? "admin" : "user",
+                    }));
+                  } else {
+                    setUserType("tercero");
+                    setNewUserData((prev) => ({
+                      ...prev,
+                      tipo: "Usuario Tercero",
+                      empresa: "",
+                      role: "user",
+                    }));
+                  }
+                }}
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="siderperu" id="siderperu" />
                   <Label htmlFor="siderperu" className="cursor-pointer text-foreground">Usuario SiderPerú</Label>
@@ -405,57 +463,89 @@ export const UsuariosPage = () => {
               </RadioGroup>
             </div>
 
-            {userType === 'siderperu' ? (
-              <div>
-                <Label className="text-foreground">Seleccionar Trabajador</Label>
-                <Select value={newUserData.trabajador} onValueChange={(value) => setNewUserData({ ...newUserData, trabajador: value })}>
+            {/* Rol */}
+            <div>
+              <Label className="text-foreground">Rol</Label>
+              {userType === "siderperu" ? (
+                <Select
+                  value={newUserData.role}
+                  onValueChange={(value) => setNewUserData({ ...newUserData, role: value })}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar de lista..." />
+                    <SelectValue placeholder="Seleccionar rol..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Carlos Mendoza - Ing. Industrial</SelectItem>
-                    <SelectItem value="2">María Torres - Ing. Eléctrica</SelectItem>
-                    <SelectItem value="3">Juan Pérez - Ing. Mecánica</SelectItem>
+                    <SelectItem value="user">Usuario</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
+              ) : (
+                <Input
+                  value="Usuario"
+                  disabled
+                  className="bg-muted cursor-not-allowed"
+                  style={{ color: "#888" }}
+                />
+              )}
+            </div>
+
+            {/* Empresa */}
+            <div>
+              <Label className="text-foreground">Empresa</Label>
+              <Select
+                value={newUserData.empresa}
+                onValueChange={(value) => setNewUserData({ ...newUserData, empresa: value })}
+                disabled={userType === "siderperu"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar empresa..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SiderPerú">SiderPerú</SelectItem>
+                  <SelectItem value="Constructora ABC">Constructora ABC</SelectItem>
+                  <SelectItem value="Ingeniería XYZ">Ingeniería XYZ</SelectItem>
+                  <SelectItem value="Grupo Industrial">Grupo Industrial</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* MultiDropdown Zonas */}
+            <div>
+              <Label className="text-foreground">Zonas</Label>
+              <div className="flex flex-wrap gap-3">
+                {ZONAS_OPTIONS.map((zona) => (
+                  <div key={zona.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`zona-${zona.value}`}
+                      checked={selectedZonas.includes(zona.value)}
+                      onCheckedChange={() => handleZonaCheckbox(zona.value)}
+                    />
+                    <Label htmlFor={`zona-${zona.value}`} className="cursor-pointer">{zona.label}</Label>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <>
-                <div>
-                  <Label className="text-foreground">Empresa</Label>
-                  <Select value={newUserData.empresa} onValueChange={(value) => setNewUserData({ ...newUserData, empresa: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar empresa..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Constructora ABC">Constructora ABC</SelectItem>
-                      <SelectItem value="Ingeniería XYZ">Ingeniería XYZ</SelectItem>
-                      <SelectItem value="Grupo Industrial">Grupo Industrial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            </div>
 
-                <div>
-                  <Label className="text-foreground">Nombre Completo</Label>
-                  <Input
-                    placeholder="Ingrese nombre completo"
-                    value={newUserData.nombre}
-                    onChange={(e) => setNewUserData({ ...newUserData, nombre: e.target.value })}
-                  />
-                </div>
+            {/* Nombre y Email */}
+            <div>
+              <Label className="text-foreground">Nombre Completo</Label>
+              <Input
+                placeholder="Ingrese nombre completo"
+                value={newUserData.nombre}
+                onChange={(e) => setNewUserData({ ...newUserData, nombre: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-foreground">Email</Label>
+              <Input
+                type="email"
+                placeholder="usuario@empresa.com"
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+              />
+            </div>
 
-                <div>
-                  <Label className="text-foreground">Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="usuario@empresa.com"
-                    value={newUserData.email}
-                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-                  />
-                </div>
-              </>
-            )}
-
+            {/* Notas importantes */}
             <div className="bg-muted/50 p-3 rounded-lg text-sm">
               <p className="font-medium mb-1 text-foreground">Notas importantes:</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
@@ -479,20 +569,19 @@ export const UsuariosPage = () => {
                         nombre: newUserData.nombre,
                         email: newUserData.email,
                         empresa: newUserData.empresa,
-                        role: newUserData.trabajador,
+                        role: newUserData.role,
+                        tipo: newUserData.tipo,
+                        zonas: newUserData.zonas,
                       },
                     ])
-                    .select()
+                    .select();
 
                   if (error) {
-                    console.error('Error al crear usuario:', error.message)
-                    return
+                    console.error('Error al crear usuario:', error.message);
+                    return;
                   }
 
-                  console.log('✅ Usuario creado:', data)
-                  setShowCreateUserModal(false)
-
-                  // 🔹 Recarga la lista de usuarios:
+                  setShowCreateUserModal(false);
                   const nuevosUsuarios = await fetchUsuarios();
                   setUsuarios(nuevosUsuarios);
                 }}
