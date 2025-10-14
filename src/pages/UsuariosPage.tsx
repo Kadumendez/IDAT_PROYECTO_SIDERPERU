@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,59 +19,6 @@ import { es, tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { fetchUsuarios } from "@/components/supabase/users";
 import { supabase } from '@/lib/supabaseClient'
-
-const MOCK_USERS = await fetchUsuarios();
-
-
-// Mock data - Usuarios
-
-//const MOCK_USERS = [
-//  {
-//    id: 1,
-//    nombre: 'Carlos Mendoza',
-//    tipo: 'Admin SiderPerú',
-//    email: 'cmendoza@siderperu.com',
-//    empresa: 'SiderPerú',
-//    role: 'admin',
-//    zonas: ['Laminados', 'Fundición'],
-//  },
-//  {
-//    id: 2,
-//    nombre: 'María Torres',
-//    tipo: 'Usuario SiderPerú',
-//    email: 'mtorres@siderperu.com',
-//    empresa: 'SiderPerú',
-//    role: 'user',
-//    zonas: ['Galvanizado'],
-//  },
-//  {
-//    id: 3,
-//    nombre: 'Juan Pérez',
-//    tipo: 'Usuario SiderPerú',
-//    email: 'jperez@siderperu.com',
-//    empresa: 'SiderPerú',
-//    role: 'user',
-//    zonas: ['Fundición'],
-//  },
-//  {
-//    id: 4,
-//    nombre: 'Roberto Sánchez',
-//    tipo: 'Usuario Tercero',
-//    email: 'rsanchez@constructoraabc.com',
-//    empresa: 'Constructora ABC',
-//    role: 'third-party',
-//    zonas: [],
-//  },
-//  {
-//    id: 5,
-//    nombre: 'Ana López',
-//    tipo: 'Usuario Tercero',
-//    email: 'alopez@ingenieriaxyz.com',
-//    empresa: 'Ingeniería XYZ',
-//    role: 'third-party',
-//    zonas: [],
-//  },
-//];
 
 // Mock planos disponibles con permisos
 const AVAILABLE_PLANOS = [
@@ -170,9 +117,11 @@ const getStatusColor = (estado: string) => {
 };
 
 export const UsuariosPage = () => {
+  // Usa estado para los usuarios
+  const [usuarios, setUsuarios] = useState<any[]>([]);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<typeof MOCK_USERS[0] | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [selectedPlanos, setSelectedPlanos] = useState<number[]>([]);
 
   // Filters for permissions modal
@@ -218,7 +167,7 @@ export const UsuariosPage = () => {
     return 'bg-[#3a3830] border border-[#fbbf24] text-[#fbbf24]';
   };
 
-  const handleUserClick = (user: typeof MOCK_USERS[0]) => {
+  const handleUserClick = (user: any) => {
     if (user.role !== 'admin') {
       setSelectedUser(user);
       setSelectedPlanos([]);
@@ -275,7 +224,7 @@ export const UsuariosPage = () => {
   });
 
   // Filter users
-  const filteredUsers = MOCK_USERS.filter((user) => {
+  const filteredUsers = usuarios.filter((user) => {
     const matchesSearch = searchTerm === "" ||
       user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -284,6 +233,15 @@ export const UsuariosPage = () => {
 
     return matchesSearch && matchesTipo && matchesEmpresa;
   });
+
+  // Cargar usuarios al montar el componente
+  useEffect(() => {
+    const cargarUsuarios = async () => {
+      const data = await fetchUsuarios();
+      setUsuarios(data);
+    };
+    cargarUsuarios();
+  }, []);
 
   return (
     <DashboardLayout pageTitle="Usuarios y Roles">
@@ -521,7 +479,7 @@ export const UsuariosPage = () => {
                         nombre: newUserData.nombre,
                         email: newUserData.email,
                         empresa: newUserData.empresa,
-                        role: newUserData.trabajador, // asegúrate que esta columna exista o cámbiala
+                        role: newUserData.trabajador,
                       },
                     ])
                     .select()
@@ -532,13 +490,11 @@ export const UsuariosPage = () => {
                   }
 
                   console.log('✅ Usuario creado:', data)
-
-                  // 🔹 Aquí cierras el modal correctamente:
                   setShowCreateUserModal(false)
 
-                  await fetchUsuarios()
-
-
+                  // 🔹 Recarga la lista de usuarios:
+                  const nuevosUsuarios = await fetchUsuarios();
+                  setUsuarios(nuevosUsuarios);
                 }}
               >
                 Crear Usuario
