@@ -323,7 +323,7 @@ export const UsuariosPage = () => {
                 Tipo de Usuario
               </label>
               <Select value={tipoFilter} onValueChange={setTipoFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border text-foreground">
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -340,7 +340,7 @@ export const UsuariosPage = () => {
                 Empresa
               </label>
               <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border text-foreground">
                   <SelectValue placeholder="Todas las empresas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -360,7 +360,7 @@ export const UsuariosPage = () => {
                   setTipoFilter("all");
                   setEmpresaFilter("all");
                 }}
-                className="w-full"
+                className="w-full bg-background border text-foreground"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

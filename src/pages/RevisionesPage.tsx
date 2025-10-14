@@ -91,12 +91,12 @@ export const RevisionesPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [selectedPlano, setSelectedPlano] = useState<any>(null);
-  
+
   // Filters for approved table
   const [searchTerm, setSearchTerm] = useState("");
   const [zonaFilter, setZonaFilter] = useState("all");
   const [empresaFilter, setEmpresaFilter] = useState("all");
-  
+
   const [statusData, setStatusData] = useState({
     estado: "",
     comentarios: "",
@@ -110,7 +110,7 @@ export const RevisionesPage = () => {
   const handleEditPlano = (plano: any, action: 'status' | 'delete' | 'rename') => {
     setSelectedPlano(plano);
     setShowActionMenu(false);
-    
+
     if (action === 'status') setShowStatusModal(true);
     if (action === 'delete') setShowDeleteModal(true);
     if (action === 'rename') setShowRenameModal(true);
@@ -144,12 +144,12 @@ export const RevisionesPage = () => {
 
   // Filter approved planos
   const filteredApprovedPlanos = APPROVED_PLANOS.filter((plano) => {
-    const matchesSearch = searchTerm === "" || 
+    const matchesSearch = searchTerm === "" ||
       plano.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       plano.codigo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesZona = !zonaFilter || zonaFilter === "all" || plano.zona === zonaFilter;
     const matchesEmpresa = !empresaFilter || empresaFilter === "all" || plano.empresa === empresaFilter;
-    
+
     return matchesSearch && matchesZona && matchesEmpresa;
   });
 
@@ -167,10 +167,10 @@ export const RevisionesPage = () => {
             <FileCheck className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Pendientes de Aprobación</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {PENDING_REVIEWS.map((review) => (
-              <Card 
+              <Card
                 key={review.id}
                 className="cursor-pointer hover:shadow-lg transition-all hover:border-primary"
                 onClick={() => handleCardClick(review)}
@@ -194,12 +194,12 @@ export const RevisionesPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  <strong className="text-foreground font-semibold">Aprobador:</strong> {review.aprobador}
-                </div>
-                <div className="text-xs text-muted-foreground border-t pt-2">
-                  Haz clic para ver opciones de edición
-                </div>
+                  <div className="text-sm text-muted-foreground">
+                    <strong className="text-foreground font-semibold">Aprobador:</strong> {review.aprobador}
+                  </div>
+                  <div className="text-xs text-muted-foreground border-t pt-2">
+                    Haz clic para ver opciones de edición
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -209,7 +209,7 @@ export const RevisionesPage = () => {
         {/* Approved Planos Section */}
         <div className="space-y-4 mt-8">
           <h2 className="text-xl font-bold text-foreground">Planos Aprobados</h2>
-          
+
           {/* Filters */}
           <div className="bg-card rounded-lg border border-border p-4">
             <div className="grid grid-cols-12 gap-4">
@@ -228,13 +228,13 @@ export const RevisionesPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="col-span-3">
                 <label className="text-sm font-medium text-foreground mb-2 block">
                   Zona
                 </label>
                 <Select value={zonaFilter} onValueChange={setZonaFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border text-foreground">
                     <SelectValue placeholder="Todas las zonas" />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,7 +251,7 @@ export const RevisionesPage = () => {
                   Empresa
                 </label>
                 <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border text-foreground">
                     <SelectValue placeholder="Todas las empresas" />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,7 +271,7 @@ export const RevisionesPage = () => {
                     setZonaFilter("all");
                     setEmpresaFilter("all");
                   }}
-                  className="w-full"
+                  className="w-full bg-background border text-foreground"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Limpiar
@@ -347,7 +347,7 @@ export const RevisionesPage = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -357,7 +357,7 @@ export const RevisionesPage = () => {
                     <Settings2 className="w-4 h-4" />
                     Gestionar Status
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="outline"
@@ -367,7 +367,7 @@ export const RevisionesPage = () => {
                     <FileEdit className="w-4 h-4" />
                     Renombrar
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="destructive"
@@ -393,7 +393,7 @@ export const RevisionesPage = () => {
           <div className="space-y-4">
             <div>
               <Label className="text-foreground">Estado</Label>
-              <Select value={statusData.estado} onValueChange={(value) => setStatusData({...statusData, estado: value})}>
+              <Select value={statusData.estado} onValueChange={(value) => setStatusData({ ...statusData, estado: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
@@ -404,17 +404,17 @@ export const RevisionesPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label className="text-foreground">Comentarios</Label>
               <Textarea
                 placeholder="Ingrese comentarios..."
                 value={statusData.comentarios}
-                onChange={(e) => setStatusData({...statusData, comentarios: e.target.value})}
+                onChange={(e) => setStatusData({ ...statusData, comentarios: e.target.value })}
                 rows={4}
               />
             </div>
-            
+
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowStatusModal(false)}>
                 Cancelar

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { fetchPlanos, createPlano, updatePlano, deletePlano } from "@/components/supabase/planos";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 
+
 // Mock data - nombres realistas de planos de siderúrgica
 const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => {
   const planoNames = [
@@ -38,7 +40,7 @@ const MOCK_PLANOS = Array.from({ length: 100 }, (_, i) => {
   const nameIndex = i % planoNames.length;
   const versionNum = Math.floor(i / planoNames.length) + 1;
   const isLatestVersion = (i % planoNames.length) === (Math.floor((100 - 1) / planoNames.length));
-  
+
   return {
     id: i + 1,
     codigo: `PL-${String(i + 1).padStart(4, '0')}`,
@@ -65,7 +67,12 @@ export const PlanosPage = () => {
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab');
-  
+
+  // Estado para planos reales
+  const [planos, setPlanos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [zonaFilter, setZonaFilter] = useState<string>("");
   const [subzonaFilter, setSubzonaFilter] = useState<string>("");
@@ -75,12 +82,12 @@ export const PlanosPage = () => {
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
   const [visibleCount, setVisibleCount] = useState(15);
-  const [previewPlano, setPreviewPlano] = useState<Plano | null>(null);
+  const [previewPlano, setPreviewPlano] = useState<any | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  
+
   // Edit modal states
   const [editingPlano, setEditingPlano] = useState<Plano | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
@@ -89,7 +96,7 @@ export const PlanosPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
-  
+
   // Permissions modal state - updated to use checkboxes
   const [permissionsData, setPermissionsData] = useState({
     rol: "",
@@ -102,20 +109,20 @@ export const PlanosPage = () => {
     frecuencia: "",
     tiempoAcceso: ""
   });
-  
+
   // Status modal state - with file upload
   const [statusData, setStatusData] = useState({
     status: "",
     comentario: "",
     archivo: null as File | null
   });
-  
+
   // Rename modal state
   const [renameData, setRenameData] = useState({
     nombre: "",
     error: false
   });
-  
+
   // Cargas tab state - 20 ejemplos iniciales
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -430,7 +437,7 @@ export const PlanosPage = () => {
     sistema: "",
     unidadMedida: ""
   });
-  
+
   // Cargas filters state
   const [cargasSearchTerm, setCargasSearchTerm] = useState("");
   const [cargasZonaFilter, setCargasZonaFilter] = useState<string>("");
@@ -443,35 +450,60 @@ export const PlanosPage = () => {
   const [cargasDateTo, setCargasDateTo] = useState<Date>();
 
   // Filter planos
-  const filteredPlanos = MOCK_PLANOS.filter((plano) => {
-    const matchesSearch = searchTerm === "" || 
-      plano.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plano.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesZona = !zonaFilter || plano.zona === zonaFilter;
-    const matchesSubzona = !subzonaFilter || plano.subzona === subzonaFilter;
-    const matchesSistema = !sistemaFilter || plano.sistema === sistemaFilter;
-    
-    // Filtro de versión actualizado
+  const filteredPlanos = planos.filter((plano) => {
+    // Detecta si es mock (tiene 'zona') o real (tiene 'id_zona')
+    const isMock = "zona" in plano;
+
+    const matchesSearch =
+      searchTerm === "" ||
+      plano.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      plano.codigo?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesZona =
+      !zonaFilter ||
+      zonaFilter === "all" ||
+      (isMock ? plano.zona === zonaFilter : plano.id_zona === zonaFilter);
+
+    const matchesSubzona =
+      !subzonaFilter ||
+      subzonaFilter === "all" ||
+      (isMock ? plano.subzona === subzonaFilter : plano.id_subzona === subzonaFilter);
+
+    const matchesSistema =
+      !sistemaFilter ||
+      sistemaFilter === "all" ||
+      (isMock ? plano.sistema === sistemaFilter : plano.id_maquina === sistemaFilter);
+
     let matchesVersion = true;
-    if (versionFilter === 'Versión actual') {
-      // Find the maximum version for this plano name
-      const maxVersionForPlano = Math.max(
-        ...MOCK_PLANOS.filter(p => p.nombre === plano.nombre).map(p => p.version)
-      );
-      matchesVersion = plano.version === maxVersionForPlano;
+    if (versionFilter === "Versión actual" && isMock) {
+      const versiones = planos.filter((p) => p.nombre === plano.nombre).map((p) => p.version);
+      const maxVersion = versiones.length > 0 ? Math.max(...versiones) : plano.version;
+      matchesVersion = plano.version === maxVersion;
     }
-    
-    const matchesEstado = !estadoFilter || plano.estado === estadoFilter;
-    
+
+    const matchesEstado =
+      !estadoFilter ||
+      estadoFilter === "all" ||
+      plano.estado === estadoFilter;
+
     let matchesDate = true;
+    const fecha = isMock ? plano.actualizado : plano.updated_at;
     if (dateFrom || dateTo) {
-      const planoDate = new Date(plano.actualizado);
+      const planoDate = fecha ? new Date(fecha) : null;
+      if (!planoDate || isNaN(planoDate.getTime())) return false;
       if (dateFrom && planoDate < dateFrom) matchesDate = false;
       if (dateTo && planoDate > dateTo) matchesDate = false;
     }
 
-    return matchesSearch && matchesZona && matchesSubzona && matchesSistema && 
-           matchesVersion && matchesEstado && matchesDate;
+    return (
+      matchesSearch &&
+      matchesZona &&
+      matchesSubzona &&
+      matchesSistema &&
+      matchesVersion &&
+      matchesEstado &&
+      matchesDate
+    );
   });
 
   // Sort planos - default by most recent date
@@ -480,13 +512,13 @@ export const PlanosPage = () => {
       // Default: sort by date (most recent first)
       return new Date(b.fechaSubida).getTime() - new Date(a.fechaSubida).getTime();
     }
-    
+
     let aValue = a[sortColumn as keyof typeof a];
     let bValue = b[sortColumn as keyof typeof b];
-    
+
     if (typeof aValue === 'string') aValue = aValue.toLowerCase();
     if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-    
+
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
@@ -604,7 +636,7 @@ export const PlanosPage = () => {
 
   const handleCancelToMenu = (currentModal: string) => {
     // Close current modal
-    switch(currentModal) {
+    switch (currentModal) {
       case 'permissions':
         setShowPermissionsModal(false);
         break;
@@ -740,9 +772,9 @@ export const PlanosPage = () => {
       };
 
       // Marcar versiones anteriores como no actuales
-      setUploadedPlanos(prev => 
-        prev.map(p => 
-          p.nombre === data.planoExistente.nombre 
+      setUploadedPlanos(prev =>
+        prev.map(p =>
+          p.nombre === data.planoExistente.nombre
             ? { ...p, isActual: false }
             : p
         )
@@ -787,11 +819,77 @@ export const PlanosPage = () => {
     setUploadFormData({ zona: "", subzona: "", sistema: "", unidadMedida: "" });
   };
 
+  // Cargar planos reales al iniciar
+  useEffect(() => {
+    const cargarPlanos = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchPlanos();
+        setPlanos(data || []);
+      } catch (err) {
+        setError("Error al cargar planos");
+        console.error("Error al cargar planos", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    cargarPlanos();
+  }, []);
+
+  // Refrescar lista de planos
+  const refreshPlanos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchPlanos();
+      setPlanos(data || []);
+    } catch (err) {
+      setError("Error al cargar planos");
+      console.error("Error al cargar planos", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Crear plano
+  const handleCreatePlano = async (nuevoPlano: any) => {
+    try {
+      await createPlano(nuevoPlano);
+      await refreshPlanos();
+    } catch (err) {
+      setError("Error al crear plano");
+      console.error("Error al crear plano", err);
+    }
+  };
+
+  // Editar plano
+  const handleUpdatePlano = async (planoEditado: any) => {
+    try {
+      await updatePlano(planoEditado.id_plano, planoEditado); // <-- Corrige aquí
+      await refreshPlanos();
+    } catch (err) {
+      setError("Error al actualizar plano");
+      console.error("Error al actualizar plano", err);
+    }
+  };
+
+  // Eliminar plano
+  const handleDeletePlano = async (planoId: string) => {
+    try {
+      await deletePlano(planoId); // <-- Esto ya está correcto si planoId es string
+      await refreshPlanos();
+    } catch (err) {
+      setError("Error al eliminar plano");
+      console.error("Error al eliminar plano", err);
+    }
+  };
+
   return (
     <DashboardLayout pageTitle={
-      activeTab === 'cargas' ? 'Planos - Cargas' : 
-      activeTab === 'listado' ? 'Planos - Listado' : 
-      'Planos'
+      activeTab === 'cargas' ? 'Planos - Cargas' :
+        activeTab === 'listado' ? 'Planos - Listado' :
+          'Planos'
     }>
       <div className="p-8">
         <div className="max-w-[1600px] mx-auto">
@@ -830,7 +928,7 @@ export const PlanosPage = () => {
               </button>
 
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-blue-500 transition-all hover:shadow-lg hover:scale-105"
               >
                 <div className="flex flex-col items-center justify-center space-y-4">
@@ -845,7 +943,7 @@ export const PlanosPage = () => {
               </button>
 
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-purple-500 transition-all hover:shadow-lg hover:scale-105"
               >
                 <div className="flex flex-col items-center justify-center space-y-4">
@@ -860,7 +958,7 @@ export const PlanosPage = () => {
               </button>
 
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-orange-500 transition-all hover:shadow-lg hover:scale-105"
               >
                 <div className="flex flex-col items-center justify-center space-y-4">
@@ -875,7 +973,7 @@ export const PlanosPage = () => {
               </button>
 
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="group bg-card dark:bg-slate-800 p-8 rounded-xl border-2 border-border dark:border-slate-700 hover:border-green-500 transition-all hover:shadow-lg hover:scale-105"
               >
                 <div className="flex flex-col items-center justify-center space-y-4">
@@ -893,456 +991,7 @@ export const PlanosPage = () => {
 
           {activeTab === 'listado' && (
             <div className="space-y-6">
-            {/* Filtros */}
-            <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-5">
-              {/* Primera fila de filtros */}
-              <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-4">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Buscar
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Nombre o código (PL-0001)"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 text-foreground dark:text-gray-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Zona
-                  </label>
-                  <Select value={zonaFilter} onValueChange={setZonaFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100]">
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Laminados">Laminados</SelectItem>
-                      <SelectItem value="Fundición">Fundición</SelectItem>
-                      <SelectItem value="Galvanizado">Galvanizado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Subzona
-                  </label>
-                  <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100]">
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Zona A">Zona A</SelectItem>
-                      <SelectItem value="Zona B">Zona B</SelectItem>
-                      <SelectItem value="Zona C">Zona C</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Sistema
-                  </label>
-                  <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100]">
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Eléctrico">Eléctrico</SelectItem>
-                      <SelectItem value="Hidráulico">Hidráulico</SelectItem>
-                      <SelectItem value="Estructuras">Estructuras</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Estado
-                  </label>
-                  <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100]">
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="APROBADO">APROBADO</SelectItem>
-                      <SelectItem value="PENDIENTE">PENDIENTE</SelectItem>
-                      <SelectItem value="COMENTADO">COMENTADO</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Segunda fila de filtros */}
-              <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Versión
-                  </label>
-                  <Select value={versionFilter} onValueChange={setVersionFilter}>
-                    <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[100]">
-                      <SelectItem value="Todas">Todas</SelectItem>
-                      <SelectItem value="Versión actual">Versión actual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-3">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Fecha desde
-                  </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !dateFrom && "text-muted-foreground",
-                          dateFrom && "text-foreground dark:text-gray-200"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[100]" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateFrom}
-                        onSelect={setDateFrom}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="col-span-3">
-                  <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                    Fecha hasta
-                  </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !dateTo && "text-muted-foreground",
-                          dateTo && "text-foreground dark:text-gray-200"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[100]" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateTo}
-                        onSelect={setDateTo}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="col-span-4 flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={clearAllFilters}
-                    className="w-full bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Limpiar Filtros
-                  </Button>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Encabezado de resultados */}
-            <div className="flex items-center justify-between">
-              <p className="text-base font-semibold text-foreground dark:text-gray-100">
-                Resultados ({filteredPlanos.length})
-              </p>
-              <p className="text-xs text-muted-foreground dark:text-gray-400">
-                Demo - datos mock
-              </p>
-            </div>
-
-            {/* Tabla */}
-            <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
-              <div ref={scrollRef} className="h-[600px] overflow-auto custom-scrollbar relative rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead 
-                        className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
-                        onClick={() => handleSort('nombre')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Plano
-                          {sortColumn === 'nombre' && (
-                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
-                        onClick={() => handleSort('empresaResponsable')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Empresa Responsable
-                          {sortColumn === 'empresaResponsable' && (
-                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
-                        onClick={() => handleSort('zona')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Zona
-                          {sortColumn === 'zona' && (
-                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
-                        onClick={() => handleSort('subzona')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Subzona
-                          {sortColumn === 'subzona' && (
-                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
-                        onClick={() => handleSort('sistema')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Sistema
-                          {sortColumn === 'sistema' && (
-                            <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
-                      <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
-                      <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
-                      <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {visiblePlanos.map((plano) => (
-                      <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center justify-center cursor-help flex-shrink-0">
-                                    <Info className="h-4 w-4 text-white hover:text-white/80 transition-colors" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                  <div className="space-y-1">
-                                    <p><strong>Fecha de subida:</strong> {plano.fechaSubida}</p>
-                                    <p><strong>Aprobador SiderPerú:</strong> {plano.aprobadorSiderPeru}</p>
-                                    <p><strong>Versión:</strong> {plano.version}</p>
-                                    <p><strong>Descripción:</strong> {plano.descripcion}</p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <div>
-                              <div className="font-semibold text-foreground dark:text-gray-100">
-                                {plano.nombre}
-                              </div>
-                              <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
-                                {plano.codigo}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
-                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
-                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
-                        <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
-                            {plano.isActual && (
-                              <Badge 
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
-                              >
-                                Actual
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center">
-                            <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
-                              {getStatusIcon(plano.estado)}
-                              {plano.estado}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-center text-foreground dark:text-gray-200">
-                          {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-3">
-                            <button
-                              onClick={() => handleDownload(plano)}
-                              className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
-                              title="Descargar"
-                            >
-                              <Download className="w-4 h-4 text-white group-hover:text-white/80" />
-                            </button>
-                            <button
-                              onClick={() => handlePreview(plano)}
-                              className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
-                              title="Vista previa"
-                            >
-                              <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
-                            </button>
-                            <button
-                              onClick={() => handleEdit(plano)}
-                              className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
-                              title="Editar"
-                            >
-                              <Pencil className="w-4 h-4 text-white group-hover:text-white/80" />
-                            </button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {visibleCount >= filteredPlanos.length && filteredPlanos.length > 0 && (
-                  <div className="text-center py-4 text-sm text-muted-foreground dark:text-gray-400 border-t border-border dark:border-slate-700">
-                    No hay más resultados
-                  </div>
-                )}
-                {filteredPlanos.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground dark:text-gray-400">
-                      No se encontraron planos con los filtros seleccionados
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-            </div>
-          )}
-
-          {activeTab === 'cargas' && (
-            <div className="space-y-6">
-            {/* Drag and Drop Zone */}
-            <div 
-              className={cn(
-                "bg-card dark:bg-slate-800 rounded-lg border-2 border-dashed p-8 transition-colors",
-                isDragging ? "border-primary bg-primary/5" : "border-border dark:border-slate-700"
-              )}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
-                    Planos
-                  </h3>
-                  {uploadedFile && (
-                    <div className="flex items-center gap-2 mt-4">
-                      <FileText className="w-5 h-5 text-primary" />
-                      <span className="text-sm font-medium text-foreground dark:text-gray-200">
-                        {uploadedFile.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground dark:text-gray-400 uppercase">
-                        ({uploadedFile.type === 'application/pdf' ? 'PDF' : 'DWG'})
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreviewFile}
-                    disabled={!uploadedFile || uploadedFile.type !== 'application/pdf'}
-                    className="text-white"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Vista previa
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleAddFile}
-                    disabled={!uploadedFile}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Agregar a la plataforma
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearFile}
-                    disabled={!uploadedFile}
-                    className="text-white"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Limpiar
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center gap-4 py-8">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="w-5 h-5 mr-2" />
-                  Subir archivo
-                </Button>
-                <p className="text-sm text-muted-foreground dark:text-gray-400 text-center">
-                  Arrastre su archivo DWG/PDF aquí o usa "Subir DWG/PDF" del TopBar
-                </p>
-              </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.dwg"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-            </div>
-
-            {/* Uploaded Files Table */}
-            {uploadedPlanos.length > 0 && (
-              <>
-              {/* Filtros para la tabla de Cargas */}
+              {/* Filtros */}
               <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-5">
                 {/* Primera fila de filtros */}
                 <div className="grid grid-cols-12 gap-4">
@@ -1354,8 +1003,8 @@ export const PlanosPage = () => {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         placeholder="Nombre o código (PL-0001)"
-                        value={cargasSearchTerm}
-                        onChange={(e) => setCargasSearchTerm(e.target.value)}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 text-foreground dark:text-gray-200"
                       />
                     </div>
@@ -1365,7 +1014,7 @@ export const PlanosPage = () => {
                     <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                       Zona
                     </label>
-                    <Select value={cargasZonaFilter} onValueChange={setCargasZonaFilter}>
+                    <Select value={zonaFilter} onValueChange={setZonaFilter}>
                       <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
@@ -1382,7 +1031,7 @@ export const PlanosPage = () => {
                     <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                       Subzona
                     </label>
-                    <Select value={cargasSubzonaFilter} onValueChange={setCargasSubzonaFilter}>
+                    <Select value={subzonaFilter} onValueChange={setSubzonaFilter}>
                       <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
@@ -1399,7 +1048,7 @@ export const PlanosPage = () => {
                     <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                       Sistema
                     </label>
-                    <Select value={cargasSistemaFilter} onValueChange={setCargasSistemaFilter}>
+                    <Select value={sistemaFilter} onValueChange={setSistemaFilter}>
                       <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
@@ -1416,7 +1065,7 @@ export const PlanosPage = () => {
                     <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                       Estado
                     </label>
-                    <Select value={cargasEstadoFilter} onValueChange={setCargasEstadoFilter}>
+                    <Select value={estadoFilter} onValueChange={setEstadoFilter}>
                       <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
@@ -1436,30 +1085,13 @@ export const PlanosPage = () => {
                     <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
                       Versión
                     </label>
-                    <Select value={cargasVersionFilter} onValueChange={setCargasVersionFilter}>
+                    <Select value={versionFilter} onValueChange={setVersionFilter}>
                       <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
                       <SelectContent className="z-[100]">
                         <SelectItem value="Todas">Todas</SelectItem>
                         <SelectItem value="Versión actual">Versión actual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
-                      Aprobador
-                    </label>
-                    <Select value={cargasAprobadorFilter} onValueChange={setCargasAprobadorFilter}>
-                      <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[100]">
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="Ing. Carlos Mendoza">Ing. Carlos Mendoza</SelectItem>
-                        <SelectItem value="Ing. María Torres">Ing. María Torres</SelectItem>
-                        <SelectItem value="Ing. Juan Pérez">Ing. Juan Pérez</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1474,19 +1106,19 @@ export const PlanosPage = () => {
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !cargasDateFrom && "text-muted-foreground",
-                            cargasDateFrom && "text-foreground dark:text-gray-200"
+                            !dateFrom && "text-muted-foreground",
+                            dateFrom && "text-foreground dark:text-gray-200"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {cargasDateFrom ? format(cargasDateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                          {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 z-[100]" align="start">
                         <CalendarComponent
                           mode="single"
-                          selected={cargasDateFrom}
-                          onSelect={setCargasDateFrom}
+                          selected={dateFrom}
+                          onSelect={setDateFrom}
                           initialFocus
                         />
                       </PopoverContent>
@@ -1503,39 +1135,29 @@ export const PlanosPage = () => {
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
-                            !cargasDateTo && "text-muted-foreground",
-                            cargasDateTo && "text-foreground dark:text-gray-200"
+                            !dateTo && "text-muted-foreground",
+                            dateTo && "text-foreground dark:text-gray-200"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {cargasDateTo ? format(cargasDateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                          {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 z-[100]" align="start">
                         <CalendarComponent
                           mode="single"
-                          selected={cargasDateTo}
-                          onSelect={setCargasDateTo}
+                          selected={dateTo}
+                          onSelect={setDateTo}
                           initialFocus
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
 
-                  <div className="col-span-2 flex items-end">
+                  <div className="col-span-4 flex items-end">
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        setCargasSearchTerm("");
-                        setCargasZonaFilter("");
-                        setCargasSubzonaFilter("");
-                        setCargasSistemaFilter("");
-                        setCargasVersionFilter("Todas");
-                        setCargasEstadoFilter("");
-                        setCargasAprobadorFilter("");
-                        setCargasDateFrom(undefined);
-                        setCargasDateTo(undefined);
-                      }}
+                      onClick={clearAllFilters}
                       className="w-full bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -1543,18 +1165,80 @@ export const PlanosPage = () => {
                     </Button>
                   </div>
                 </div>
+
               </div>
 
+              {/* Encabezado de resultados */}
+              <div className="flex items-center justify-between">
+                <p className="text-base font-semibold text-foreground dark:text-gray-100">
+                  Resultados ({filteredPlanos.length})
+                </p>
+                <p className="text-xs text-muted-foreground dark:text-gray-400">
+                  Demo - datos mock
+                </p>
+              </div>
+
+              {/* Tabla */}
               <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
-                <div className="h-[400px] overflow-auto custom-scrollbar relative rounded-lg">
+                <div ref={scrollRef} className="h-[600px] overflow-auto custom-scrollbar relative rounded-lg">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Plano</TableHead>
-                        <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Empresa Responsable</TableHead>
-                        <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Zona</TableHead>
-                        <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Subzona</TableHead>
-                        <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Sistema</TableHead>
+                        <TableHead
+                          className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
+                          onClick={() => handleSort('nombre')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Plano
+                            {sortColumn === 'nombre' && (
+                              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
+                          onClick={() => handleSort('empresaResponsable')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Empresa Responsable
+                            {sortColumn === 'empresaResponsable' && (
+                              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
+                          onClick={() => handleSort('zona')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Zona
+                            {sortColumn === 'zona' && (
+                              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
+                          onClick={() => handleSort('subzona')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Subzona
+                            {sortColumn === 'subzona' && (
+                              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead
+                          className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10 cursor-pointer hover:bg-muted/70"
+                          onClick={() => handleSort('sistema')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Sistema
+                            {sortColumn === 'sistema' && (
+                              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
                         <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
                         <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
@@ -1562,712 +1246,1184 @@ export const PlanosPage = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {uploadedPlanos
-                        .filter((plano) => {
-                          const matchesSearch = cargasSearchTerm === "" || 
-                            plano.nombre.toLowerCase().includes(cargasSearchTerm.toLowerCase()) ||
-                            plano.codigo.toLowerCase().includes(cargasSearchTerm.toLowerCase());
-                          const matchesZona = !cargasZonaFilter || plano.zona === cargasZonaFilter;
-                          const matchesSubzona = !cargasSubzonaFilter || plano.subzona === cargasSubzonaFilter;
-                          const matchesSistema = !cargasSistemaFilter || plano.sistema === cargasSistemaFilter;
-                          const matchesEstado = !cargasEstadoFilter || plano.estado === cargasEstadoFilter;
-                          const matchesAprobador = !cargasAprobadorFilter || plano.aprobadorSiderPeru === cargasAprobadorFilter;
-                          
-                          let matchesVersion = true;
-                          if (cargasVersionFilter === 'Versión actual') {
-                            matchesVersion = plano.isActual;
-                          }
-                          
-                          let matchesDate = true;
-                          if (cargasDateFrom || cargasDateTo) {
-                            const planoDate = new Date(plano.actualizado);
-                            if (cargasDateFrom && planoDate < cargasDateFrom) matchesDate = false;
-                            if (cargasDateTo && planoDate > cargasDateTo) matchesDate = false;
-                          }
-
-                          return matchesSearch && matchesZona && matchesSubzona && matchesSistema && 
-                                 matchesVersion && matchesEstado && matchesAprobador && matchesDate;
-                        })
-                        .sort((a, b) => new Date(b.actualizado).getTime() - new Date(a.actualizado).getTime())
-                        .map((plano) => (
-                        <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="flex items-center justify-center cursor-help flex-shrink-0">
-                                      <Info className="h-4 w-4 text-white hover:text-white/80 transition-colors" />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <div className="space-y-1">
-                                      <p><strong>Fecha de carga:</strong> {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}</p>
-                                      <p><strong>Aprobador SiderPerú:</strong> {plano.aprobadorSiderPeru}</p>
-                                      <p><strong>Versión:</strong> {plano.version}</p>
-                                      <p><strong>Zona:</strong> {plano.zona}</p>
-                                      <p><strong>Sistema:</strong> {plano.sistema}</p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              <div>
-                                <div className="font-semibold text-foreground dark:text-gray-100">
-                                  {plano.nombre}
-                                </div>
-                                <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
-                                  {plano.codigo}
+                      {visiblePlanos.map((plano) => {
+                        const isMock = "zona" in plano;
+                        return (
+                          <TableRow key={isMock ? plano.id : plano.id_plano} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex items-center justify-center cursor-help flex-shrink-0">
+                                        <Info className="h-4 w-4 text-white hover:text-white/80 transition-colors" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <div className="space-y-1">
+                                        <p><strong>Fecha de subida:</strong> {isMock ? plano.fechaSubida : plano.created_at}</p>
+                                        <p><strong>Aprobador SiderPerú:</strong> {isMock ? plano.aprobadorSiderPeru : plano.creado_por}</p>
+                                        <p><strong>Versión:</strong> {isMock ? plano.version : "-"}</p>
+                                        <p><strong>Descripción:</strong> {isMock ? plano.descripcion : ""}</p>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <div>
+                                  <div className="font-semibold text-foreground dark:text-gray-100">
+                                    {plano.nombre}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
+                                    {plano.codigo}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
-                          <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
-                              {plano.isActual && (
-                                <Badge 
-                                  variant="outline"
-                                  className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
-                                >
-                                  Actual
+                            </TableCell>
+                            <TableCell className="text-sm text-foreground dark:text-gray-200">
+                              {isMock ? plano.empresaResponsable : plano.creado_por}
+                            </TableCell>
+                            <TableCell className="text-sm text-foreground dark:text-gray-200">
+                              {isMock ? plano.zona : plano.id_zona}
+                            </TableCell>
+                            <TableCell className="text-sm text-foreground dark:text-gray-200">
+                              {isMock ? plano.subzona : plano.id_subzona}
+                            </TableCell>
+                            <TableCell className="text-sm text-foreground dark:text-gray-200">
+                              {isMock ? plano.sistema : plano.id_maquina}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-sm text-foreground dark:text-gray-200">
+                                  {isMock ? `v${plano.version}` : "-"}
+                                </span>
+                                {isMock && plano.isActual && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
+                                  >
+                                    Actual
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex justify-center">
+                                <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
+                                  {getStatusIcon(plano.estado)}
+                                  {plano.estado}
                                 </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-center">
-                              <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
-                                {getStatusIcon(plano.estado)}
-                                {plano.estado}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm text-center text-foreground dark:text-gray-200">
-                            {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center gap-3">
-                              <button
-                                onClick={() => handleDownload(plano)}
-                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
-                                title="Descargar"
-                              >
-                                <Download className="w-4 h-4 text-white group-hover:text-white/80" />
-                              </button>
-                              <button
-                                onClick={() => handlePreview(plano)}
-                                className="p-2 hover:bg-muted/50 rounded-md transition-colors group text-white"
-                                title="Vista previa"
-                              >
-                                <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
-                              </button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-center text-foreground dark:text-gray-200">
+                              {format(new Date(isMock ? plano.actualizado : plano.updated_at), 'dd/MM/yyyy', { locale: es })}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-3">
+                                <button
+                                  onClick={() => handleDownload(plano)}
+                                  className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                  title="Descargar"
+                                >
+                                  <Download className="w-4 h-4 text-white group-hover:text-white/80" />
+                                </button>
+                                <button
+                                  onClick={() => handlePreview(plano)}
+                                  className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                  title="Vista previa"
+                                >
+                                  <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(plano)}
+                                  className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                  title="Editar"
+                                >
+                                  <Pencil className="w-4 h-4 text-white group-hover:text-white/80" />
+                                </button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
+                  {visibleCount >= filteredPlanos.length && filteredPlanos.length > 0 && (
+                    <div className="text-center py-4 text-sm text-muted-foreground dark:text-gray-400 border-t border-border dark:border-slate-700">
+                      No hay más resultados
+                    </div>
+                  )}
+                  {filteredPlanos.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground dark:text-gray-400">
+                        No se encontraron planos con los filtros seleccionados
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-              </>
-            )}
             </div>
           )}
 
-        {/* Preview Modal for Listado */}
-        <Dialog open={!!previewPlano} onOpenChange={() => setPreviewPlano(null)}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>
-                Vista previa: {previewPlano?.nombre} ({previewPlano?.codigo})
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex items-center justify-center h-[500px] bg-muted dark:bg-slate-700 rounded-lg">
-              <p className="text-muted-foreground dark:text-gray-400">
-                Aquí se mostrará el plano en vista previa
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Preview Modal for PDF Files */}
-        <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
-          <DialogContent className="max-w-6xl h-[90vh] p-4">
-            <DialogHeader className="pb-2">
-              <DialogTitle>Vista previa: {uploadedFile?.name}</DialogTitle>
-            </DialogHeader>
-            {previewFile && (
-              <iframe
-                src={previewFile}
-                className="w-full h-[calc(90vh-80px)] rounded-lg"
-                title="PDF Preview"
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Upload Plano Modal */}
-        <UploadPlanoModal
-          open={uploadModalOpen}
-          onOpenChange={setUploadModalOpen}
-          fileName={uploadedFile?.name || ''}
-          onConfirm={handleConfirmUpload}
-          existingPlanos={uploadedPlanos.map(p => ({
-            nombre: p.nombre,
-            version: p.version,
-            zona: p.zona,
-            subzona: p.subzona,
-            sistema: p.sistema
-          }))}
-        />
-
-        {/* Upload Form Modal */}
-        <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Cargar Plano</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
-                  Zona
-                </label>
-                <Select value={uploadFormData.zona} onValueChange={(value) => setUploadFormData({...uploadFormData, zona: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar zona" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Laminados">Laminados</SelectItem>
-                    <SelectItem value="Fundición">Fundición</SelectItem>
-                    <SelectItem value="Galvanizado">Galvanizado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
-                  Subzona
-                </label>
-                <Select value={uploadFormData.subzona} onValueChange={(value) => setUploadFormData({...uploadFormData, subzona: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar subzona" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Zona A">Zona A</SelectItem>
-                    <SelectItem value="Zona B">Zona B</SelectItem>
-                    <SelectItem value="Zona C">Zona C</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
-                  Sistema
-                </label>
-                <Select value={uploadFormData.sistema} onValueChange={(value) => setUploadFormData({...uploadFormData, sistema: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar sistema" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Eléctrico">Eléctrico</SelectItem>
-                    <SelectItem value="Hidráulico">Hidráulico</SelectItem>
-                    <SelectItem value="Estructuras">Estructuras</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
-                  Unidades de Medida
-                </label>
-                <Select value={uploadFormData.unidadMedida} onValueChange={(value) => setUploadFormData({...uploadFormData, unidadMedida: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar unidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Milímetros">Milímetros</SelectItem>
-                    <SelectItem value="Pulgadas">Pulgadas</SelectItem>
-                    <SelectItem value="Pies">Pies</SelectItem>
-                    <SelectItem value="Mixto">Mixto</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  <strong>Nota:</strong> Al guardar el archivo, este pasa automáticamente a un estado de "Pendiente de aprobación".
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={handleCancelUpload}
-                  className="flex-1"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSaveUpload}
-                  className="flex-1"
-                  disabled={!uploadFormData.zona || !uploadFormData.subzona || !uploadFormData.sistema || !uploadFormData.unidadMedida}
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Action Menu Modal */}
-        <Dialog open={showActionMenu} onOpenChange={handleCancelModals}>
-          <DialogContent className="max-w-md border-2 border-primary/30">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Opciones de Edición</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 py-4">
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
-                onClick={() => handleActionMenuOption('permissions')}
+          {activeTab === 'cargas' && (
+            <div className="space-y-6">
+              {/* Drag and Drop Zone */}
+              <div
+                className={cn(
+                  "bg-card dark:bg-slate-800 rounded-lg border-2 border-dashed p-8 transition-colors",
+                  isDragging ? "border-primary bg-primary/5" : "border-border dark:border-slate-700"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
-                <Shield className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Gestionar Permisos</div>
-                  <div className="text-xs text-muted-foreground">Configurar accesos y autorizaciones</div>
-                </div>
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
-                onClick={() => handleActionMenuOption('status')}
-              >
-                <Settings className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Gestionar Status</div>
-                  <div className="text-xs text-muted-foreground">Aprobar u observar plano</div>
-                </div>
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
-                onClick={() => handleActionMenuOption('delete')}
-              >
-                <FileX className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Eliminar Plano</div>
-                  <div className="text-xs text-muted-foreground">Borrar permanentemente</div>
-                </div>
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
-                onClick={() => handleActionMenuOption('rename')}
-              >
-                <FileEdit className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-semibold">Renombrar Plano</div>
-                  <div className="text-xs text-muted-foreground">Cambiar nombre del archivo</div>
-                </div>
-              </Button>
-            </div>
-            <div className="flex justify-center pt-2">
-              <Button 
-                variant="secondary" 
-                onClick={handleCancelModals} 
-                className="w-full bg-muted hover:bg-muted/80"
-              >
-                Cancelar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Success Check Animation */}
-        <Dialog open={showSuccessCheck} onOpenChange={setShowSuccessCheck}>
-          <DialogContent className="sm:max-w-sm border-2 border-green-500/50 bg-card dark:bg-slate-800">
-            <div className="flex flex-col items-center justify-center py-4 space-y-4">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
-                  <Check className="h-12 w-12 text-green-500 animate-fade-in" />
-                </div>
-              </div>
-              <div className="text-center space-y-1">
-                <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
-                  ¡Cambios guardados!
-                </h3>
-                <p className="text-sm text-muted-foreground dark:text-gray-400">
-                  La acción se realizó correctamente
-                </p>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Permissions Modal */}
-        <Dialog open={showPermissionsModal} onOpenChange={() => setShowPermissionsModal(false)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-primary/30">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Gestionar Permisos - {editingPlano?.nombre}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              {/* Rol */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Rol:</Label>
-                <Select value={permissionsData.rol} onValueChange={(value) => setPermissionsData({...permissionsData, rol: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Usuario SiderPerú">Usuario SiderPerú</SelectItem>
-                    <SelectItem value="Usuario Tercero">Usuario Tercero</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Acceso a - Changed to checkboxes */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Acceso a:</Label>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="descargar"
-                      checked={permissionsData.accesoDescargar}
-                      onCheckedChange={(checked) =>
-                        setPermissionsData({ ...permissionsData, accesoDescargar: checked as boolean })
-                      }
-                    />
-                    <Label htmlFor="descargar" className="font-normal cursor-pointer">Descargar</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="subir"
-                      checked={permissionsData.accesoSubir}
-                      onCheckedChange={(checked) =>
-                        setPermissionsData({ ...permissionsData, accesoSubir: checked as boolean })
-                      }
-                    />
-                    <Label htmlFor="subir" className="font-normal cursor-pointer">Subir nueva versión</Label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Empresa */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Empresa:</Label>
-                <Select 
-                  value={permissionsData.empresa} 
-                  onValueChange={(value) => setPermissionsData({...permissionsData, empresa: value})}
-                  disabled={permissionsData.rol === "Usuario SiderPerú"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar empresa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SIDERPERÚ">SIDERPERÚ</SelectItem>
-                    <SelectItem value="Constructora ABC">Constructora ABC</SelectItem>
-                    <SelectItem value="Ingeniería XYZ">Ingeniería XYZ</SelectItem>
-                    <SelectItem value="Grupo Industrial">Grupo Industrial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Usuario */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Usuario:</Label>
-                <Select 
-                  value={permissionsData.usuario} 
-                  onValueChange={(value) => setPermissionsData({...permissionsData, usuario: value})}
-                  disabled={!permissionsData.empresa}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar usuario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user1">Juan Pérez</SelectItem>
-                    <SelectItem value="user2">María García</SelectItem>
-                    <SelectItem value="user3">Carlos López</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Versiones a autorizar */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Versiones a autorizar:</Label>
-                <RadioGroup 
-                  value={permissionsData.versionesAutorizar} 
-                  onValueChange={(value) => setPermissionsData({...permissionsData, versionesAutorizar: value})}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="todas" id="todas" />
-                    <Label htmlFor="todas" className="font-normal cursor-pointer">Todas las versiones</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 gap-3">
-                    <RadioGroupItem value="especificar" id="especificar" />
-                    <Label htmlFor="especificar" className="font-normal cursor-pointer">Especificar</Label>
-                    {permissionsData.versionesAutorizar === "especificar" && (
-                      <Input 
-                        placeholder="Ej: 1-5, 8, 11-13"
-                        value={permissionsData.versionesEspecificas}
-                        onChange={(e) => setPermissionsData({...permissionsData, versionesEspecificas: e.target.value})}
-                        className="flex-1"
-                      />
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
+                      Planos
+                    </h3>
+                    {uploadedFile && (
+                      <div className="flex items-center gap-2 mt-4">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <span className="text-sm font-medium text-foreground dark:text-gray-200">
+                          {uploadedFile.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground dark:text-gray-400 uppercase">
+                          ({uploadedFile.type === 'application/pdf' ? 'PDF' : 'DWG'})
+                        </span>
+                      </div>
                     )}
                   </div>
-                </RadioGroup>
-              </div>
-
-              {/* Tiempo de acceso */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Tiempo de acceso:</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs mb-2 block">Frecuencia</Label>
-                    <Select value={permissionsData.frecuencia} onValueChange={(value) => setPermissionsData({...permissionsData, frecuencia: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Días">Días</SelectItem>
-                        <SelectItem value="Meses">Meses</SelectItem>
-                        <SelectItem value="Años">Años</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs mb-2 block">Colocar número</Label>
-                    <Input 
-                      type="number"
-                      placeholder="0"
-                      value={permissionsData.tiempoAcceso}
-                      onChange={(e) => setPermissionsData({...permissionsData, tiempoAcceso: e.target.value})}
-                    />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviewFile}
+                      disabled={!uploadedFile || uploadedFile.type !== 'application/pdf'}
+                      className="text-white"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Vista previa
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleAddFile}
+                      disabled={!uploadedFile}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Agregar a la plataforma
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearFile}
+                      disabled={!uploadedFile}
+                      className="text-white"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Limpiar
+                    </Button>
                   </div>
                 </div>
-              </div>
 
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="secondary" 
-                  onClick={() => handleCancelToMenu('permissions')} 
-                  className="flex-1 bg-muted hover:bg-muted/80"
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleActionComplete} className="flex-1">
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Status Modal */}
-        <Dialog open={showStatusModal} onOpenChange={() => setShowStatusModal(false)}>
-          <DialogContent className="max-w-xl border-2 border-primary/30">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Gestionar Status - {editingPlano?.nombre}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              {/* Status */}
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Status:</Label>
-                <RadioGroup value={statusData.status} onValueChange={(value) => setStatusData({...statusData, status: value})}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="aprobar" id="aprobar" />
-                    <Label htmlFor="aprobar" className="font-normal cursor-pointer">Aprobar</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="observar" id="observar" />
-                    <Label htmlFor="observar" className="font-normal cursor-pointer">Observar</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Comentario with smooth animation */}
-              <div 
-                className={cn(
-                  "overflow-hidden transition-all duration-300 ease-in-out space-y-4",
-                  statusData.status === "observar" 
-                    ? "max-h-[600px] opacity-100" 
-                    : "max-h-0 opacity-0"
-                )}
-              >
-                <div>
-                  <Label className="text-sm font-semibold mb-3 block">Comentario:</Label>
-                  <Textarea 
-                    placeholder="Escriba sus observaciones aquí... (máximo 1500 palabras)"
-                    value={statusData.comentario}
-                    onChange={(e) => {
-                      const words = e.target.value.split(/\s+/).filter(word => word.length > 0);
-                      if (words.length <= 1500) {
-                        setStatusData({...statusData, comentario: e.target.value});
-                      }
-                    }}
-                    className="min-h-[120px]"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statusData.comentario.split(/\s+/).filter(word => word.length > 0).length}/1500 palabras
+                <div className="flex flex-col items-center justify-center gap-4 py-8">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-5 h-5 mr-2" />
+                    Subir archivo
+                  </Button>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400 text-center">
+                    Arrastre su archivo DWG/PDF aquí o usa "Subir DWG/PDF" del TopBar
                   </p>
                 </div>
 
-                {/* Drag and drop file upload */}
-                <div>
-                  <Label className="text-sm font-semibold mb-3 block">O puede subir un archivo (máx. 5MB):</Label>
-                  <div
-                    className={cn(
-                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-                      statusData.archivo 
-                        ? "border-green-500 bg-green-500/10" 
-                        : "border-muted-foreground/25 hover:border-primary/50"
-                    )}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer.files[0];
-                      if (file && file.size <= 5 * 1024 * 1024) {
-                        setStatusData({ ...statusData, archivo: file });
-                      }
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                  >
-                    {statusData.archivo ? (
-                      <div className="space-y-2">
-                        <FileText className="h-8 w-8 mx-auto text-green-500" />
-                        <p className="text-sm font-medium">{statusData.archivo.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(statusData.archivo.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setStatusData({ ...statusData, archivo: null })}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Eliminar
-                        </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.dwg"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+
+              {/* Uploaded Files Table */}
+              {uploadedPlanos.length > 0 && (
+                <>
+                  {/* Filtros para la tabla de Cargas */}
+                  <div className="bg-card dark:bg-slate-800 p-6 rounded-lg border border-border dark:border-slate-700 space-y-5">
+                    {/* Primera fila de filtros */}
+                    <div className="grid grid-cols-12 gap-4">
+                      <div className="col-span-4">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Buscar
+                        </label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Nombre o código (PL-0001)"
+                            value={cargasSearchTerm}
+                            onChange={(e) => setCargasSearchTerm(e.target.value)}
+                            className="pl-10 text-foreground dark:text-gray-200"
+                          />
+                        </div>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-                        <p className="text-sm">Arrastra tu archivo aquí</p>
+
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Zona
+                        </label>
+                        <Select value={cargasZonaFilter} onValueChange={setCargasZonaFilter}>
+                          <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                            <SelectValue placeholder="Todas" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100]">
+                            <SelectItem value="all">Todas</SelectItem>
+                            <SelectItem value="Laminados">Laminados</SelectItem>
+                            <SelectItem value="Fundición">Fundición</SelectItem>
+                            <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Subzona
+                        </label>
+                        <Select value={cargasSubzonaFilter} onValueChange={setCargasSubzonaFilter}>
+                          <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                            <SelectValue placeholder="Todas" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100]">
+                            <SelectItem value="all">Todas</SelectItem>
+                            <SelectItem value="Zona A">Zona A</SelectItem>
+                            <SelectItem value="Zona B">Zona B</SelectItem>
+                            <SelectItem value="Zona C">Zona C</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Sistema
+                        </label>
+                        <Select value={cargasSistemaFilter} onValueChange={setCargasSistemaFilter}>
+                          <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                            <SelectValue placeholder="Todos" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100]">
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                            <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                            <SelectItem value="Estructuras">Estructuras</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Estado
+                        </label>
+                        <Select value={cargasEstadoFilter} onValueChange={setCargasEstadoFilter}>
+                          <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                            <SelectValue placeholder="Todos" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100]">
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="APROBADO">APROBADO</SelectItem>
+                            <SelectItem value="PENDIENTE">PENDIENTE</SelectItem>
+                            <SelectItem value="COMENTADO">COMENTADO</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Segunda fila de filtros */}
+                    <div className="grid grid-cols-12 gap-4">
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Versión
+                        </label>
+                        <Select value={cargasVersionFilter} onValueChange={setCargasVersionFilter}>
+                          <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                            <SelectValue placeholder="Todas" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100]">
+                            <SelectItem value="Todas">Todas</SelectItem>
+                            <SelectItem value="Versión actual">Versión actual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Aprobador
+                        </label>
+                        <Select value={cargasAprobadorFilter} onValueChange={setCargasAprobadorFilter}>
+                          <SelectTrigger className="[&>span]:text-foreground dark:[&>span]:text-gray-200">
+                            <SelectValue placeholder="Todos" />
+                          </SelectTrigger>
+                          <SelectContent className="z-[100]">
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="Ing. Carlos Mendoza">Ing. Carlos Mendoza</SelectItem>
+                            <SelectItem value="Ing. María Torres">Ing. María Torres</SelectItem>
+                            <SelectItem value="Ing. Juan Pérez">Ing. Juan Pérez</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="col-span-3">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Fecha desde
+                        </label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !cargasDateFrom && "text-muted-foreground",
+                                cargasDateFrom && "text-foreground dark:text-gray-200"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {cargasDateFrom ? format(cargasDateFrom, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-[100]" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={cargasDateFrom}
+                              onSelect={setCargasDateFrom}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="col-span-3">
+                        <label className="text-sm font-medium text-muted-foreground dark:text-gray-400 mb-2 block">
+                          Fecha hasta
+                        </label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !cargasDateTo && "text-muted-foreground",
+                                cargasDateTo && "text-foreground dark:text-gray-200"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {cargasDateTo ? format(cargasDateTo, "dd/MM/yyyy", { locale: es }) : "Seleccionar"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-[100]" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={cargasDateTo}
+                              onSelect={setCargasDateTo}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="col-span-2 flex items-end">
                         <Button
-                          size="sm"
                           variant="outline"
                           onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = '*/*';
-                            input.onchange = (e) => {
-                              const file = (e.target as HTMLInputElement).files?.[0];
-                              if (file && file.size <= 5 * 1024 * 1024) {
-                                setStatusData({ ...statusData, archivo: file });
-                              }
-                            };
-                            input.click();
+                            setCargasSearchTerm("");
+                            setCargasZonaFilter("");
+                            setCargasSubzonaFilter("");
+                            setCargasSistemaFilter("");
+                            setCargasVersionFilter("Todas");
+                            setCargasEstadoFilter("");
+                            setCargasAprobadorFilter("");
+                            setCargasDateFrom(undefined);
+                            setCargasDateTo(undefined);
                           }}
+                          className="w-full bg-muted/50 hover:bg-muted text-foreground border-2 border-border"
                         >
-                          <Upload className="h-4 w-4 mr-1" />
-                          Seleccionar archivo
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Limpiar Filtros
                         </Button>
                       </div>
-                    )}
+                    </div>
                   </div>
+
+                  <div className="bg-card dark:bg-slate-800 rounded-lg border border-border dark:border-slate-700 overflow-hidden">
+                    <div className="h-[400px] overflow-auto custom-scrollbar relative rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Plano</TableHead>
+                            <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Empresa Responsable</TableHead>
+                            <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Zona</TableHead>
+                            <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Subzona</TableHead>
+                            <TableHead className="font-semibold text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Sistema</TableHead>
+                            <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Versión</TableHead>
+                            <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Estado</TableHead>
+                            <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Fecha de Carga</TableHead>
+                            <TableHead className="font-semibold text-center text-foreground bg-background dark:bg-slate-800 sticky top-0 z-10">Acciones</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {uploadedPlanos
+                            .filter((plano) => {
+                              const matchesSearch = cargasSearchTerm === "" ||
+                                plano.nombre.toLowerCase().includes(cargasSearchTerm.toLowerCase()) ||
+                                plano.codigo.toLowerCase().includes(cargasSearchTerm.toLowerCase());
+                              const matchesZona = !cargasZonaFilter || plano.zona === cargasZonaFilter;
+                              const matchesSubzona = !cargasSubzonaFilter || plano.subzona === cargasSubzonaFilter;
+                              const matchesSistema = !cargasSistemaFilter || plano.sistema === cargasSistemaFilter;
+                              const matchesEstado = !cargasEstadoFilter || plano.estado === cargasEstadoFilter;
+                              const matchesAprobador = !cargasAprobadorFilter || plano.aprobadorSiderPeru === cargasAprobadorFilter;
+
+                              let matchesVersion = true;
+                              if (cargasVersionFilter === 'Versión actual') {
+                                matchesVersion = plano.isActual;
+                              }
+
+                              let matchesDate = true;
+                              if (cargasDateFrom || cargasDateTo) {
+                                const planoDate = new Date(plano.actualizado);
+                                if (cargasDateFrom && planoDate < cargasDateFrom) matchesDate = false;
+                                if (cargasDateTo && planoDate > cargasDateTo) matchesDate = false;
+                              }
+
+                              return matchesSearch && matchesZona && matchesSubzona && matchesSistema &&
+                                matchesVersion && matchesEstado && matchesAprobador && matchesDate;
+                            })
+                            .sort((a, b) => new Date(b.actualizado).getTime() - new Date(a.actualizado).getTime())
+                            .map((plano) => (
+                              <TableRow key={plano.id} className="hover:bg-muted/30 dark:hover:bg-slate-700/30">
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="flex items-center justify-center cursor-help flex-shrink-0">
+                                            <Info className="h-4 w-4 text-white hover:text-white/80 transition-colors" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs">
+                                          <div className="space-y-1">
+                                            <p><strong>Fecha de carga:</strong> {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}</p>
+                                            <p><strong>Aprobador SiderPerú:</strong> {plano.aprobadorSiderPeru}</p>
+                                            <p><strong>Versión:</strong> {plano.version}</p>
+                                            <p><strong>Zona:</strong> {plano.zona}</p>
+                                            <p><strong>Sistema:</strong> {plano.sistema}</p>
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                    <div>
+                                      <div className="font-semibold text-foreground dark:text-gray-100">
+                                        {plano.nombre}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground dark:text-gray-500 mt-0.5">
+                                        {plano.codigo}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.empresaResponsable}</TableCell>
+                                <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.zona}</TableCell>
+                                <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.subzona}</TableCell>
+                                <TableCell className="text-sm text-foreground dark:text-gray-200">{plano.sistema}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-center gap-2">
+                                    <span className="text-sm text-foreground dark:text-gray-200">v{plano.version}</span>
+                                    {plano.isActual && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px] px-1.5 py-0 h-4 border-green-500 text-green-500"
+                                      >
+                                        Actual
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex justify-center">
+                                    <Badge className={`${getStatusColor(plano.estado)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium`}>
+                                      {getStatusIcon(plano.estado)}
+                                      {plano.estado}
+                                    </Badge>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-sm text-center text-foreground dark:text-gray-200">
+                                  {format(new Date(plano.actualizado), 'dd/MM/yyyy', { locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button
+                                      onClick={() => handleDownload(plano)}
+                                      className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                      title="Descargar"
+                                    >
+                                      <Download className="w-4 h-4 text-white group-hover:text-white/80" />
+                                    </button>
+                                    <button
+                                      onClick={() => handlePreview(plano)}
+                                      className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                      title="Vista previa"
+                                    >
+                                      <Eye className="w-4 h-4 text-white group-hover:text-white/80" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleEdit(plano)}
+                                      className="p-2 hover:bg-muted/50 rounded-md transition-colors group"
+                                      title="Editar"
+                                    >
+                                      <Pencil className="w-4 h-4 text-white group-hover:text-white/80" />
+                                    </button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Preview Modal for Listado */}
+          <Dialog open={!!previewPlano} onOpenChange={() => setPreviewPlano(null)}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>
+                  Vista previa: {previewPlano?.nombre} ({previewPlano?.codigo})
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex items-center justify-center h-[500px] bg-muted dark:bg-slate-700 rounded-lg">
+                <p className="text-muted-foreground dark:text-gray-400">
+                  Aquí se mostrará el plano en vista previa
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Preview Modal for PDF Files */}
+          <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
+            <DialogContent className="max-w-6xl h-[90vh] p-4">
+              <DialogHeader className="pb-2">
+                <DialogTitle>Vista previa: {uploadedFile?.name}</DialogTitle>
+              </DialogHeader>
+              {previewFile && (
+                <iframe
+                  src={previewFile}
+                  className="w-full h-[calc(90vh-80px)] rounded-lg"
+                  title="PDF Preview"
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Upload Plano Modal */}
+          <UploadPlanoModal
+            open={uploadModalOpen}
+            onOpenChange={setUploadModalOpen}
+            fileName={uploadedFile?.name || ''}
+            onConfirm={handleConfirmUpload}
+            existingPlanos={uploadedPlanos.map(p => ({
+              nombre: p.nombre,
+              version: p.version,
+              zona: p.zona,
+              subzona: p.subzona,
+              sistema: p.sistema
+            }))}
+          />
+
+          {/* Upload Form Modal */}
+          <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Cargar Plano</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                    Zona
+                  </label>
+                  <Select value={uploadFormData.zona} onValueChange={(value) => setUploadFormData({ ...uploadFormData, zona: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar zona" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Laminados">Laminados</SelectItem>
+                      <SelectItem value="Fundición">Fundición</SelectItem>
+                      <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                    Subzona
+                  </label>
+                  <Select value={uploadFormData.subzona} onValueChange={(value) => setUploadFormData({ ...uploadFormData, subzona: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar subzona" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Zona A">Zona A</SelectItem>
+                      <SelectItem value="Zona B">Zona B</SelectItem>
+                      <SelectItem value="Zona C">Zona C</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                    Sistema
+                  </label>
+                  <Select value={uploadFormData.sistema} onValueChange={(value) => setUploadFormData({ ...uploadFormData, sistema: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar sistema" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                      <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                      <SelectItem value="Estructuras">Estructuras</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground dark:text-gray-200 mb-2 block">
+                    Unidades de Medida
+                  </label>
+                  <Select value={uploadFormData.unidadMedida} onValueChange={(value) => setUploadFormData({ ...uploadFormData, unidadMedida: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar unidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Milímetros">Milímetros</SelectItem>
+                      <SelectItem value="Pulgadas">Pulgadas</SelectItem>
+                      <SelectItem value="Pies">Pies</SelectItem>
+                      <SelectItem value="Mixto">Mixto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    <strong>Nota:</strong> Al guardar el archivo, este pasa automáticamente a un estado de "Pendiente de aprobación".
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelUpload}
+                    className="flex-1"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSaveUpload}
+                    className="flex-1"
+                    disabled={!uploadFormData.zona || !uploadFormData.subzona || !uploadFormData.sistema || !uploadFormData.unidadMedida}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar
+                  </Button>
                 </div>
               </div>
+            </DialogContent>
+          </Dialog>
 
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="secondary" 
-                  onClick={() => handleCancelToMenu('status')} 
-                  className="flex-1 bg-muted hover:bg-muted/80"
+          {/* Action Menu Modal */}
+          <Dialog open={showActionMenu} onOpenChange={handleCancelModals}>
+            <DialogContent className="max-w-md border-2 border-primary/30">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Opciones de Edición</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
+                  onClick={() => handleActionMenuOption('permissions')}
+                >
+                  <Shield className="w-5 h-5 mr-3" />
+                  <div className="text-left">
+                    <div className="font-semibold">Gestionar Permisos</div>
+                    <div className="text-xs text-muted-foreground">Configurar accesos y autorizaciones</div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
+                  onClick={() => handleActionMenuOption('status')}
+                >
+                  <Settings className="w-5 h-5 mr-3" />
+                  <div className="text-left">
+                    <div className="font-semibold">Gestionar Status</div>
+                    <div className="text-xs text-muted-foreground">Aprobar u observar plano</div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
+                  onClick={() => handleActionMenuOption('delete')}
+                >
+                  <FileX className="w-5 h-5 mr-3" />
+                  <div className="text-left">
+                    <div className="font-semibold">Eliminar Plano</div>
+                    <div className="text-xs text-muted-foreground">Borrar permanentemente</div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto py-4 border-2 hover:border-primary/50 hover:bg-primary/10 transition-all"
+                  onClick={() => handleActionMenuOption('rename')}
+                >
+                  <FileEdit className="w-5 h-5 mr-3" />
+                  <div className="text-left">
+                    <div className="font-semibold">Renombrar Plano</div>
+                    <div className="text-xs text-muted-foreground">Cambiar nombre del archivo</div>
+                  </div>
+                </Button>
+              </div>
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="secondary"
+                  onClick={handleCancelModals}
+                  className="w-full bg-muted hover:bg-muted/80"
                 >
                   Cancelar
                 </Button>
-                <Button onClick={handleActionComplete} className="flex-1">
-                  Actualizar
-                </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
 
-        {/* Delete Modal */}
-        <Dialog open={showDeleteModal} onOpenChange={() => setShowDeleteModal(false)}>
-          <DialogContent className="max-w-md border-2 border-primary/30">
-            <DialogHeader>
-              <DialogTitle className="text-center text-xl">¿Está seguro que desea eliminar el plano?</DialogTitle>
-            </DialogHeader>
-            <div className="flex gap-3 py-4">
-              <Button
-                variant="destructive"
-                onClick={handleActionComplete}
-                className="flex-1"
-              >
-                Sí
-              </Button>
-              <Button 
-                variant="secondary" 
-                onClick={() => handleCancelToMenu('delete')} 
-                className="flex-1 bg-muted hover:bg-muted/80"
-              >
-                No
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          {/* Success Check Animation */}
+          <Dialog open={showSuccessCheck} onOpenChange={setShowSuccessCheck}>
+            <DialogContent className="sm:max-w-sm border-2 border-green-500/50 bg-card dark:bg-slate-800">
+              <div className="flex flex-col items-center justify-center py-4 space-y-4">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
+                    <Check className="h-12 w-12 text-green-500 animate-fade-in" />
+                  </div>
+                </div>
+                <div className="text-center space-y-1">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
+                    ¡Cambios guardados!
+                  </h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">
+                    La acción se realizó correctamente
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-        {/* Rename Modal */}
-        <Dialog open={showRenameModal} onOpenChange={() => setShowRenameModal(false)}>
-          <DialogContent className="max-w-md border-2 border-primary/30">
-            <DialogHeader>
-              <DialogTitle className="text-xl">Renombrar Plano</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label className="text-sm font-semibold mb-3 block">Nombre:</Label>
-                <Input
-                  value={renameData.nombre}
-                  onChange={(e) => {
-                    const nameExists = MOCK_PLANOS.some(
-                      p => p.nombre.toLowerCase() === e.target.value.toLowerCase() && p.id !== editingPlano?.id
-                    );
-                    setRenameData({ nombre: e.target.value, error: nameExists });
+          {/* Permissions Modal */}
+          <Dialog open={showPermissionsModal} onOpenChange={() => setShowPermissionsModal(false)}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-primary/30">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Gestionar Permisos - {editingPlano?.nombre}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 py-4">
+                {/* Rol */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Rol:</Label>
+                  <Select value={permissionsData.rol} onValueChange={(value) => setPermissionsData({ ...permissionsData, rol: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Usuario SiderPerú">Usuario SiderPerú</SelectItem>
+                      <SelectItem value="Usuario Tercero">Usuario Tercero</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Acceso a - Changed to checkboxes */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Acceso a:</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="descargar"
+                        checked={permissionsData.accesoDescargar}
+                        onCheckedChange={(checked) =>
+                          setPermissionsData({ ...permissionsData, accesoDescargar: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="descargar" className="font-normal cursor-pointer">Descargar</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="subir"
+                        checked={permissionsData.accesoSubir}
+                        onCheckedChange={(checked) =>
+                          setPermissionsData({ ...permissionsData, accesoSubir: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="subir" className="font-normal cursor-pointer">Subir nueva versión</Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Empresa */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Empresa:</Label>
+                  <Select
+                    value={permissionsData.empresa}
+                    onValueChange={(value) => setPermissionsData({ ...permissionsData, empresa: value })}
+                    disabled={permissionsData.rol === "Usuario SiderPerú"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SIDERPERÚ">SIDERPERÚ</SelectItem>
+                      <SelectItem value="Constructora ABC">Constructora ABC</SelectItem>
+                      <SelectItem value="Ingeniería XYZ">Ingeniería XYZ</SelectItem>
+                      <SelectItem value="Grupo Industrial">Grupo Industrial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Usuario */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Usuario:</Label>
+                  <Select
+                    value={permissionsData.usuario}
+                    onValueChange={(value) => setPermissionsData({ ...permissionsData, usuario: value })}
+                    disabled={!permissionsData.empresa}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar usuario" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user1">Juan Pérez</SelectItem>
+                      <SelectItem value="user2">María García</SelectItem>
+                      <SelectItem value="user3">Carlos López</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Versiones a autorizar */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Versiones a autorizar:</Label>
+                  <RadioGroup
+                    value={permissionsData.versionesAutorizar}
+                    onValueChange={(value) => setPermissionsData({ ...permissionsData, versionesAutorizar: value })}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="todas" id="todas" />
+                      <Label htmlFor="todas" className="font-normal cursor-pointer">Todas las versiones</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 gap-3">
+                      <RadioGroupItem value="especificar" id="especificar" />
+                      <Label htmlFor="especificar" className="font-normal cursor-pointer">Especificar</Label>
+                      {permissionsData.versionesAutorizar === "especificar" && (
+                        <Input
+                          placeholder="Ej: 1-5, 8, 11-13"
+                          value={permissionsData.versionesEspecificas}
+                          onChange={(e) => setPermissionsData({ ...permissionsData, versionesEspecificas: e.target.value })}
+                          className="flex-1"
+                        />
+                      )}
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Tiempo de acceso */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Tiempo de acceso:</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs mb-2 block">Frecuencia</Label>
+                      <Select value={permissionsData.frecuencia} onValueChange={(value) => setPermissionsData({ ...permissionsData, frecuencia: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Días">Días</SelectItem>
+                          <SelectItem value="Meses">Meses</SelectItem>
+                          <SelectItem value="Años">Años</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-2 block">Colocar número</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={permissionsData.tiempoAcceso}
+                        onChange={(e) => setPermissionsData({ ...permissionsData, tiempoAcceso: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleCancelToMenu('permissions')}
+                    className="flex-1 bg-muted hover:bg-muted/80"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleActionComplete} className="flex-1">
+                    Guardar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Status Modal */}
+          <Dialog open={showStatusModal} onOpenChange={() => setShowStatusModal(false)}>
+            <DialogContent className="max-w-xl border-2 border-primary/30">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Gestionar Status - {editingPlano?.nombre}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 py-4">
+                {/* Status */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Status:</Label>
+                  <RadioGroup value={statusData.status} onValueChange={(value) => setStatusData({ ...statusData, status: value })}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="aprobar" id="aprobar" />
+                      <Label htmlFor="aprobar" className="font-normal cursor-pointer">Aprobar</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="observar" id="observar" />
+                      <Label htmlFor="observar" className="font-normal cursor-pointer">Observar</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Comentario with smooth animation */}
+                <div
+                  className={cn(
+                    "overflow-hidden transition-all duration-300 ease-in-out space-y-4",
+                    statusData.status === "observar"
+                      ? "max-h-[600px] opacity-100"
+                      : "max-h-0 opacity-0"
+                  )}
+                >
+                  <div>
+                    <Label className="text-sm font-semibold mb-3 block">Comentario:</Label>
+                    <Textarea
+                      placeholder="Escriba sus observaciones aquí... (máximo 1500 palabras)"
+                      value={statusData.comentario}
+                      onChange={(e) => {
+                        const words = e.target.value.split(/\s+/).filter(word => word.length > 0);
+                        if (words.length <= 1500) {
+                          setStatusData({ ...statusData, comentario: e.target.value });
+                        }
+                      }}
+                      className="min-h-[120px]"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {statusData.comentario.split(/\s+/).filter(word => word.length > 0).length}/1500 palabras
+                    </p>
+                  </div>
+
+                  {/* Drag and drop file upload */}
+                  <div>
+                    <Label className="text-sm font-semibold mb-3 block">O puede subir un archivo (máx. 5MB):</Label>
+                    <div
+                      className={cn(
+                        "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                        statusData.archivo
+                          ? "border-green-500 bg-green-500/10"
+                          : "border-muted-foreground/25 hover:border-primary/50"
+                      )}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file && file.size <= 5 * 1024 * 1024) {
+                          setStatusData({ ...statusData, archivo: file });
+                        }
+                      }}
+                      onDragOver={(e) => e.preventDefault()}
+                    >
+                      {statusData.archivo ? (
+                        <div className="space-y-2">
+                          <FileText className="h-8 w-8 mx-auto text-green-500" />
+                          <p className="text-sm font-medium">{statusData.archivo.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(statusData.archivo.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setStatusData({ ...statusData, archivo: null })}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Eliminar
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                          <p className="text-sm">Arrastra tu archivo aquí</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = '*/*';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
+                                if (file && file.size <= 5 * 1024 * 1024) {
+                                  setStatusData({ ...statusData, archivo: file });
+                                }
+                              };
+                              input.click();
+                            }}
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Seleccionar archivo
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleCancelToMenu('status')}
+                    className="flex-1 bg-muted hover:bg-muted/80"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (editingPlano) {
+                        // Aquí puedes actualizar el estado del plano según statusData
+                        const planoActualizado = {
+                          ...editingPlano,
+                          estado: statusData.status === "aprobar" ? "APROBADO" : "COMENTADO",
+                          comentario: statusData.comentario,
+                          // Puedes agregar más campos si tu tabla los tiene
+                        };
+                        await handleUpdatePlano(planoActualizado);
+                        handleActionComplete();
+                      }
+                    }}
+                    className="flex-1"
+                  >
+                    Actualizar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Modal */}
+          <Dialog open={showDeleteModal} onOpenChange={() => setShowDeleteModal(false)}>
+            <DialogContent className="max-w-md border-2 border-primary/30">
+              <DialogHeader>
+                <DialogTitle className="text-center text-xl">¿Está seguro que desea eliminar el plano?</DialogTitle>
+              </DialogHeader>
+              <div className="flex gap-3 py-4">
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (editingPlano) {
+                      const planoId: string | null =
+                        (typeof (editingPlano as any).id_plano === 'string')
+                          ? (editingPlano as any).id_plano
+                          : (typeof (editingPlano as any).id === 'number')
+                            ? String((editingPlano as any).id)
+                            : null
+
+                      if (planoId) {
+                        await handleDeletePlano(planoId) // handleDeletePlano(id: string)
+                        handleActionComplete()
+                      }
+                    }
                   }}
-                  placeholder="Ingrese el nuevo nombre"
-                />
-                {renameData.error && (
-                  <p className="text-sm text-destructive mt-2">Ya existe un plano con este nombre</p>
-                )}
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="secondary" 
-                  onClick={() => handleCancelToMenu('rename')} 
+                  className="flex-1"
+                >
+                  Sí
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleCancelToMenu('delete')}
                   className="flex-1 bg-muted hover:bg-muted/80"
                 >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleActionComplete} 
-                  className="flex-1"
-                  disabled={renameData.error || !renameData.nombre}
-                >
-                  Guardar
+                  No
                 </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+
+          {/* Rename Modal */}
+          <Dialog open={showRenameModal} onOpenChange={() => setShowRenameModal(false)}>
+            <DialogContent className="max-w-md border-2 border-primary/30">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Renombrar Plano</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Nombre:</Label>
+                  <Input
+                    value={renameData.nombre}
+                    onChange={(e) => {
+                      const nameExists = MOCK_PLANOS.some(
+                        p => p.nombre.toLowerCase() === e.target.value.toLowerCase() && p.id !== editingPlano?.id
+                      );
+                      setRenameData({ nombre: e.target.value, error: nameExists });
+                    }}
+                    placeholder="Ingrese el nuevo nombre"
+                  />
+                  {renameData.error && (
+                    <p className="text-sm text-destructive mt-2">Ya existe un plano con este nombre</p>
+                  )}
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleCancelToMenu('rename')}
+                    className="flex-1 bg-muted hover:bg-muted/80"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (editingPlano && renameData.nombre && !renameData.error) {
+                        const planoActualizado = {
+                          ...editingPlano,
+                          nombre: renameData.nombre,
+                        };
+                        await handleUpdatePlano(planoActualizado);
+                        handleActionComplete();
+                      }
+                    }}
+                    className="flex-1"
+                    disabled={renameData.error || !renameData.nombre}
+                  >
+                    Guardar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
         </div>
       </div>
