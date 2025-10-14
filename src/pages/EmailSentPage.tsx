@@ -6,7 +6,7 @@ export const EmailSentPage = () => {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background image - full screen cover */}
-      <div 
+      <div
         className="absolute inset-0 -z-10 bg-cover bg-center"
         style={{ backgroundImage: `url(${fondoIndustrial})` }}
         aria-hidden="true"
@@ -20,9 +20,9 @@ export const EmailSentPage = () => {
         {/* Form card */}
         <div className="w-full max-w-md rounded-2xl bg-white/85 backdrop-blur-md shadow-xl p-6 sm:p-8 md:p-10">
           <div className="flex flex-col items-center mb-8">
-            <img 
-              src={siderperuLogo} 
-              alt="SIDERPERU" 
+            <img
+              src={siderperuLogo}
+              alt="SIDERPERU"
               className="h-16 mb-6"
             />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -34,8 +34,8 @@ export const EmailSentPage = () => {
           </div>
 
           <div className="text-center">
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
             >
               Volver a inicio de sesión

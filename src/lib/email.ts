@@ -45,12 +45,12 @@ export const sendResetEmail = async (
     console.log("✅ Email enviado correctamente:", response.status, response.text);
   } catch (error: any) {
     console.error("❌ Error al enviar email:", error);
-    
+
     // Mensajes de error más descriptivos
     if (error.text) {
       throw new Error(`Error de EmailJS: ${error.text}`);
     }
-    
+
     throw new Error("No se pudo enviar el correo. Verifica tu conexión a internet.");
   }
 };

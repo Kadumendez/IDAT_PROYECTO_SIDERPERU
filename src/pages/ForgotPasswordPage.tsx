@@ -12,7 +12,7 @@ export const ForgotPasswordPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validación básica de formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -44,7 +44,7 @@ export const ForgotPasswordPage = () => {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Background image - full screen cover */}
-      <div 
+      <div
         className="absolute inset-0 -z-10 bg-cover bg-center"
         style={{ backgroundImage: `url(${fondoIndustrial})` }}
         aria-hidden="true"
@@ -58,9 +58,9 @@ export const ForgotPasswordPage = () => {
         {/* Form card */}
         <div className="w-full max-w-md rounded-2xl bg-white/85 backdrop-blur-md shadow-xl p-6 sm:p-8 md:p-10">
           <div className="flex flex-col items-center mb-8">
-            <img 
-              src={siderperuLogo} 
-              alt="SIDERPERU" 
+            <img
+              src={siderperuLogo}
+              alt="SIDERPERU"
               className="h-16 mb-6"
             />
             <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -73,8 +73,8 @@ export const ForgotPasswordPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2"
               >
                 Dirección de correo electrónico o Nombre de Usuario
@@ -101,8 +101,8 @@ export const ForgotPasswordPage = () => {
           </form>
 
           <div className="text-center mt-6">
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
             >
               Volver a inicio de sesión

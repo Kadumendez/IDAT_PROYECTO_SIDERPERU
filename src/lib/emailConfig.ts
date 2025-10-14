@@ -1,32 +1,26 @@
 /**
- * EmailJS Configuration
- * 
- * IMPORTANTE: Este archivo contiene las credenciales de EmailJS.
- * En producción, considera usar un sistema de secrets más seguro.
- * 
- * Para obtener estas credenciales:
- * 1. Crea una cuenta en https://www.emailjs.com/
- * 2. Service ID: En "Email Services"
- * 3. Template ID: En "Email Templates"
- * 4. Public Key: En "Account" > "API Keys"
+ * EmailJS Configuration (desde variables de entorno)
+ * – En front solo van claves públicas (PUBLIC KEY). Nunca claves privadas.
+ * – Los IDs de service/template no son secretos, pero mejor no hardcodearlos.
  */
 
 export const emailConfig = {
-  serviceId: "service_20s7oqj",
-  templateId: "template_0cv8moj",
-  publicKey: "jal1IWZaTn2qRlNZx",
-  appName: "SIDERPERU",
-  supportEmail: "kadudesposoriomendez@gmail.com"
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID ?? "",
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID ?? "",
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY ?? "",
+  appName: "Gestión de Planos",
+
+  // Puedes dejar correos visibles si no son secretos
+  supportName: "Soporte SIDERPERU",
+  supportEmail: "kadudesposoriomendez@gmail.com",
 } as const;
 
 // Validación de configuración
 export const validateEmailConfig = (): boolean => {
   const { serviceId, templateId, publicKey } = emailConfig;
-  
   if (!serviceId || !templateId || !publicKey) {
-    console.error("❌ Configuración de EmailJS incompleta. Verifica src/lib/emailConfig.ts");
+    console.error("❌ EmailJS mal configurado. Completa VITE_EMAILJS_* en tu .env");
     return false;
   }
-  
   return true;
 };
