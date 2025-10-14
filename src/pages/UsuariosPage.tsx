@@ -15,64 +15,70 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { fetchUsuarios } from "@/components/supabase/users";
+import { supabase } from '@/lib/supabaseClient'
+
+const MOCK_USERS = await fetchUsuarios();
+
 
 // Mock data - Usuarios
-const MOCK_USERS = [
-  {
-    id: 1,
-    nombre: 'Carlos Mendoza',
-    tipo: 'Admin SiderPerú',
-    email: 'cmendoza@siderperu.com',
-    empresa: 'SiderPerú',
-    role: 'admin',
-    zonas: ['Laminados', 'Fundición'],
-  },
-  {
-    id: 2,
-    nombre: 'María Torres',
-    tipo: 'Usuario SiderPerú',
-    email: 'mtorres@siderperu.com',
-    empresa: 'SiderPerú',
-    role: 'user',
-    zonas: ['Galvanizado'],
-  },
-  {
-    id: 3,
-    nombre: 'Juan Pérez',
-    tipo: 'Usuario SiderPerú',
-    email: 'jperez@siderperu.com',
-    empresa: 'SiderPerú',
-    role: 'user',
-    zonas: ['Fundición'],
-  },
-  {
-    id: 4,
-    nombre: 'Roberto Sánchez',
-    tipo: 'Usuario Tercero',
-    email: 'rsanchez@constructoraabc.com',
-    empresa: 'Constructora ABC',
-    role: 'third-party',
-    zonas: [],
-  },
-  {
-    id: 5,
-    nombre: 'Ana López',
-    tipo: 'Usuario Tercero',
-    email: 'alopez@ingenieriaxyz.com',
-    empresa: 'Ingeniería XYZ',
-    role: 'third-party',
-    zonas: [],
-  },
-];
+
+//const MOCK_USERS = [
+//  {
+//    id: 1,
+//    nombre: 'Carlos Mendoza',
+//    tipo: 'Admin SiderPerú',
+//    email: 'cmendoza@siderperu.com',
+//    empresa: 'SiderPerú',
+//    role: 'admin',
+//    zonas: ['Laminados', 'Fundición'],
+//  },
+//  {
+//    id: 2,
+//    nombre: 'María Torres',
+//    tipo: 'Usuario SiderPerú',
+//    email: 'mtorres@siderperu.com',
+//    empresa: 'SiderPerú',
+//    role: 'user',
+//    zonas: ['Galvanizado'],
+//  },
+//  {
+//    id: 3,
+//    nombre: 'Juan Pérez',
+//    tipo: 'Usuario SiderPerú',
+//    email: 'jperez@siderperu.com',
+//    empresa: 'SiderPerú',
+//    role: 'user',
+//    zonas: ['Fundición'],
+//  },
+//  {
+//    id: 4,
+//    nombre: 'Roberto Sánchez',
+//    tipo: 'Usuario Tercero',
+//    email: 'rsanchez@constructoraabc.com',
+//    empresa: 'Constructora ABC',
+//    role: 'third-party',
+//    zonas: [],
+//  },
+//  {
+//    id: 5,
+//    nombre: 'Ana López',
+//    tipo: 'Usuario Tercero',
+//    email: 'alopez@ingenieriaxyz.com',
+//    empresa: 'Ingeniería XYZ',
+//    role: 'third-party',
+//    zonas: [],
+//  },
+//];
 
 // Mock planos disponibles con permisos
 const AVAILABLE_PLANOS = [
-  { 
-    id: 1, 
-    codigo: 'PL-0001', 
-    nombre: 'Planta General Acería', 
+  {
+    id: 1,
+    codigo: 'PL-0001',
+    nombre: 'Planta General Acería',
     empresaResponsable: 'Constructora ABC',
     zona: 'Laminados',
     subzona: 'Zona A',
@@ -82,10 +88,10 @@ const AVAILABLE_PLANOS = [
     fechaCarga: '2025-01-15',
     hasPermission: true
   },
-  { 
-    id: 2, 
-    codigo: 'PL-0002', 
-    nombre: 'Circuito Refrigeración Horno', 
+  {
+    id: 2,
+    codigo: 'PL-0002',
+    nombre: 'Circuito Refrigeración Horno',
     empresaResponsable: 'Ingeniería XYZ',
     zona: 'Fundición',
     subzona: 'Zona B',
@@ -95,10 +101,10 @@ const AVAILABLE_PLANOS = [
     fechaCarga: '2025-01-10',
     hasPermission: true
   },
-  { 
-    id: 3, 
-    codigo: 'PL-0003', 
-    nombre: 'Sistema Transportador Materias Primas', 
+  {
+    id: 3,
+    codigo: 'PL-0003',
+    nombre: 'Sistema Transportador Materias Primas',
     empresaResponsable: 'Grupo Industrial',
     zona: 'Galvanizado',
     subzona: 'Zona C',
@@ -108,10 +114,10 @@ const AVAILABLE_PLANOS = [
     fechaCarga: '2025-01-20',
     hasPermission: false
   },
-  { 
-    id: 4, 
-    codigo: 'PL-0004', 
-    nombre: 'Distribución Eléctrica Planta', 
+  {
+    id: 4,
+    codigo: 'PL-0004',
+    nombre: 'Distribución Eléctrica Planta',
     empresaResponsable: 'Constructora ABC',
     zona: 'Laminados',
     subzona: 'Zona A',
@@ -121,10 +127,10 @@ const AVAILABLE_PLANOS = [
     fechaCarga: '2025-01-12',
     hasPermission: false
   },
-  { 
-    id: 5, 
-    codigo: 'PL-0005', 
-    nombre: 'Red Contraincendios Principal', 
+  {
+    id: 5,
+    codigo: 'PL-0005',
+    nombre: 'Red Contraincendios Principal',
     empresaResponsable: 'Ingeniería XYZ',
     zona: 'Fundición',
     subzona: 'Zona B',
@@ -168,7 +174,7 @@ export const UsuariosPage = () => {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<typeof MOCK_USERS[0] | null>(null);
   const [selectedPlanos, setSelectedPlanos] = useState<number[]>([]);
-  
+
   // Filters for permissions modal
   const [permSearchTerm, setPermSearchTerm] = useState("");
   const [permZonaFilter, setPermZonaFilter] = useState("");
@@ -178,19 +184,19 @@ export const UsuariosPage = () => {
   const [permVersionFilter, setPermVersionFilter] = useState("");
   const [permDateFrom, setPermDateFrom] = useState<Date>();
   const [permDateTo, setPermDateTo] = useState<Date>();
-  
+
   // Permission management states
   const [versionOption, setVersionOption] = useState<'todas' | 'especifica'>('todas');
   const [versionSpecType, setVersionSpecType] = useState<'actual' | 'historica'>('actual');
   const [versionesEspecificas, setVersionesEspecificas] = useState("");
   const [tiempoUnidad, setTiempoUnidad] = useState("meses");
   const [tiempoCantidad, setTiempoCantidad] = useState("");
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFilter, setTipoFilter] = useState("all");
   const [empresaFilter, setEmpresaFilter] = useState("all");
-  
+
   // Create user form
   const [userType, setUserType] = useState<'siderperu' | 'tercero'>('siderperu');
   const [newUserData, setNewUserData] = useState({
@@ -221,8 +227,8 @@ export const UsuariosPage = () => {
   };
 
   const handleTogglePlano = (planoId: number) => {
-    setSelectedPlanos(prev => 
-      prev.includes(planoId) 
+    setSelectedPlanos(prev =>
+      prev.includes(planoId)
         ? prev.filter(id => id !== planoId)
         : [...prev, planoId]
     );
@@ -235,7 +241,7 @@ export const UsuariosPage = () => {
       setSelectedPlanos(filteredPermPlanos.map(p => p.id));
     }
   };
-  
+
   const clearPermFilters = () => {
     setPermSearchTerm("");
     setPermZonaFilter("");
@@ -246,10 +252,10 @@ export const UsuariosPage = () => {
     setPermDateFrom(undefined);
     setPermDateTo(undefined);
   };
-  
+
   // Filter planos for permissions modal
   const filteredPermPlanos = AVAILABLE_PLANOS.filter((plano) => {
-    const matchesSearch = permSearchTerm === "" || 
+    const matchesSearch = permSearchTerm === "" ||
       plano.nombre.toLowerCase().includes(permSearchTerm.toLowerCase()) ||
       plano.codigo.toLowerCase().includes(permSearchTerm.toLowerCase());
     const matchesZona = !permZonaFilter || permZonaFilter === "all" || plano.zona === permZonaFilter;
@@ -257,25 +263,25 @@ export const UsuariosPage = () => {
     const matchesSistema = !permSistemaFilter || permSistemaFilter === "all" || plano.sistema === permSistemaFilter;
     const matchesEstado = !permEstadoFilter || permEstadoFilter === "all" || plano.estado === permEstadoFilter;
     const matchesVersion = !permVersionFilter || permVersionFilter === "all" || String(plano.version) === permVersionFilter;
-    
+
     let matchesDate = true;
     if (permDateFrom || permDateTo) {
       const planoDate = new Date(plano.fechaCarga);
       if (permDateFrom && planoDate < permDateFrom) matchesDate = false;
       if (permDateTo && planoDate > permDateTo) matchesDate = false;
     }
-    
+
     return matchesSearch && matchesZona && matchesSubzona && matchesSistema && matchesEstado && matchesVersion && matchesDate;
   });
 
   // Filter users
   const filteredUsers = MOCK_USERS.filter((user) => {
-    const matchesSearch = searchTerm === "" || 
+    const matchesSearch = searchTerm === "" ||
       user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = !tipoFilter || tipoFilter === "all" || user.tipo === tipoFilter;
     const matchesEmpresa = !empresaFilter || empresaFilter === "all" || user.empresa === empresaFilter;
-    
+
     return matchesSearch && matchesTipo && matchesEmpresa;
   });
 
@@ -290,7 +296,7 @@ export const UsuariosPage = () => {
               Administra usuarios de SiderPerú y empresas terceras
             </p>
           </div>
-          <Button 
+          <Button
             onClick={() => setShowCreateUserModal(true)}
             className="flex items-center gap-2"
           >
@@ -317,7 +323,7 @@ export const UsuariosPage = () => {
                 />
               </div>
             </div>
-            
+
             <div className="col-span-3">
               <label className="text-sm font-medium text-white mb-2 block">
                 Tipo de Usuario
@@ -378,7 +384,7 @@ export const UsuariosPage = () => {
         {/* User Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredUsers.map((user) => (
-            <Card 
+            <Card
               key={user.id}
               className={`${user.role === 'admin' ? 'opacity-75' : 'cursor-pointer hover:shadow-lg transition-all hover:border-primary'}`}
               onClick={() => handleUserClick(user)}
@@ -396,7 +402,7 @@ export const UsuariosPage = () => {
                   </div>
                   <Badge className={`${getUserBadgeColor(user.tipo)} flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs`}>
                     {user.tipo.includes('Admin') ? <Shield className="w-3 h-3" /> : <Users className="w-3 h-3" />}
-                    {user.tipo.split(' ')[0]}
+                    {user.tipo}
                   </Badge>
                 </div>
               </CardHeader>
@@ -444,7 +450,7 @@ export const UsuariosPage = () => {
             {userType === 'siderperu' ? (
               <div>
                 <Label className="text-foreground">Seleccionar Trabajador</Label>
-                <Select value={newUserData.trabajador} onValueChange={(value) => setNewUserData({...newUserData, trabajador: value})}>
+                <Select value={newUserData.trabajador} onValueChange={(value) => setNewUserData({ ...newUserData, trabajador: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar de lista..." />
                   </SelectTrigger>
@@ -459,7 +465,7 @@ export const UsuariosPage = () => {
               <>
                 <div>
                   <Label className="text-foreground">Empresa</Label>
-                  <Select value={newUserData.empresa} onValueChange={(value) => setNewUserData({...newUserData, empresa: value})}>
+                  <Select value={newUserData.empresa} onValueChange={(value) => setNewUserData({ ...newUserData, empresa: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar empresa..." />
                     </SelectTrigger>
@@ -470,23 +476,23 @@ export const UsuariosPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label className="text-foreground">Nombre Completo</Label>
-                  <Input 
+                  <Input
                     placeholder="Ingrese nombre completo"
                     value={newUserData.nombre}
-                    onChange={(e) => setNewUserData({...newUserData, nombre: e.target.value})}
+                    onChange={(e) => setNewUserData({ ...newUserData, nombre: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
                   <Label className="text-foreground">Email</Label>
-                  <Input 
+                  <Input
                     type="email"
                     placeholder="usuario@empresa.com"
                     value={newUserData.email}
-                    onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
                   />
                 </div>
               </>
@@ -501,12 +507,40 @@ export const UsuariosPage = () => {
                 <li>No tienen acceso a descargas ni vista previa</li>
               </ul>
             </div>
-            
+
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowCreateUserModal(false)}>
                 Cancelar
               </Button>
-              <Button onClick={() => setShowCreateUserModal(false)}>
+              <Button
+                onClick={async () => {
+                  const { data, error } = await supabase
+                    .from('usuario')
+                    .insert([
+                      {
+                        nombre: newUserData.nombre,
+                        email: newUserData.email,
+                        empresa: newUserData.empresa,
+                        role: newUserData.trabajador, // asegúrate que esta columna exista o cámbiala
+                      },
+                    ])
+                    .select()
+
+                  if (error) {
+                    console.error('Error al crear usuario:', error.message)
+                    return
+                  }
+
+                  console.log('✅ Usuario creado:', data)
+
+                  // 🔹 Aquí cierras el modal correctamente:
+                  setShowCreateUserModal(false)
+
+                  await fetchUsuarios()
+
+
+                }}
+              >
                 Crear Usuario
               </Button>
             </div>
@@ -514,19 +548,21 @@ export const UsuariosPage = () => {
         </DialogContent>
       </Dialog>
 
+
+
       {/* Permissions Modal with Tabs */}
       <Dialog open={showPermissionsModal} onOpenChange={setShowPermissionsModal}>
         <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Gestionar Permisos - {selectedUser?.nombre}</DialogTitle>
           </DialogHeader>
-          
+
           <Tabs defaultValue="activos" className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="activos">Permisos Activos</TabsTrigger>
               <TabsTrigger value="gestion">Gestión de Permisos</TabsTrigger>
             </TabsList>
-            
+
             {/* Permisos Activos Tab */}
             <TabsContent value="activos" className="flex-1 overflow-y-auto space-y-4 mt-4">
               <div className="bg-muted/50 p-3 rounded-lg">
@@ -552,7 +588,7 @@ export const UsuariosPage = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="col-span-2">
                     <label className="text-sm font-medium text-white mb-2 block">
                       Zona
@@ -764,7 +800,7 @@ export const UsuariosPage = () => {
                 </Table>
               </div>
             </TabsContent>
-            
+
             {/* Gestión de Permisos Tab */}
             <TabsContent value="gestion" className="flex-1 overflow-y-auto space-y-4 mt-4">
               <div className="bg-muted/50 p-3 rounded-lg">
@@ -775,89 +811,89 @@ export const UsuariosPage = () => {
               {/* Same Filters */}
               <div className="bg-card rounded-lg border border-border p-4">
                 <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-3">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Buscar
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Buscar plano..."
-                      value={permSearchTerm}
-                      onChange={(e) => setPermSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                  <div className="col-span-3">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Buscar
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Buscar plano..."
+                        value={permSearchTerm}
+                        onChange={(e) => setPermSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
-                </div>
-                
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Zona
-                  </label>
-                  <Select value={permZonaFilter} onValueChange={setPermZonaFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Laminados">Laminados</SelectItem>
-                      <SelectItem value="Fundición">Fundición</SelectItem>
-                      <SelectItem value="Galvanizado">Galvanizado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Subzona
-                  </label>
-                  <Select value={permSubzonaFilter} onValueChange={setPermSubzonaFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Zona A">Zona A</SelectItem>
-                      <SelectItem value="Zona B">Zona B</SelectItem>
-                      <SelectItem value="Zona C">Zona C</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Zona
+                    </label>
+                    <Select value={permZonaFilter} onValueChange={setPermZonaFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="Laminados">Laminados</SelectItem>
+                        <SelectItem value="Fundición">Fundición</SelectItem>
+                        <SelectItem value="Galvanizado">Galvanizado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Sistema
-                  </label>
-                  <Select value={permSistemaFilter} onValueChange={setPermSistemaFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Eléctrico">Eléctrico</SelectItem>
-                      <SelectItem value="Hidráulico">Hidráulico</SelectItem>
-                      <SelectItem value="Estructuras">Estructuras</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Subzona
+                    </label>
+                    <Select value={permSubzonaFilter} onValueChange={setPermSubzonaFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="Zona A">Zona A</SelectItem>
+                        <SelectItem value="Zona B">Zona B</SelectItem>
+                        <SelectItem value="Zona C">Zona C</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Estado
-                  </label>
-                  <Select value={permEstadoFilter} onValueChange={setPermEstadoFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="APROBADO">Aprobado</SelectItem>
-                      <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-                      <SelectItem value="COMENTADO">Comentado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Sistema
+                    </label>
+                    <Select value={permSistemaFilter} onValueChange={setPermSistemaFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="Eléctrico">Eléctrico</SelectItem>
+                        <SelectItem value="Hidráulico">Hidráulico</SelectItem>
+                        <SelectItem value="Estructuras">Estructuras</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Estado
+                    </label>
+                    <Select value={permEstadoFilter} onValueChange={setPermEstadoFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="APROBADO">Aprobado</SelectItem>
+                        <SelectItem value="PENDIENTE">Pendiente</SelectItem>
+                        <SelectItem value="COMENTADO">Comentado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <div className="col-span-1 flex items-end">
                     <Button
@@ -870,89 +906,89 @@ export const UsuariosPage = () => {
                   </div>
                 </div>
 
-              <div className="grid grid-cols-12 gap-4 mt-4">
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Versión
-                  </label>
-                  <Select value={permVersionFilter} onValueChange={setPermVersionFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="1">v1</SelectItem>
-                      <SelectItem value="2">v2</SelectItem>
-                      <SelectItem value="3">v3</SelectItem>
-                      <SelectItem value="4">v4</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <div className="grid grid-cols-12 gap-4 mt-4">
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Versión
+                    </label>
+                    <Select value={permVersionFilter} onValueChange={setPermVersionFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="1">v1</SelectItem>
+                        <SelectItem value="2">v2</SelectItem>
+                        <SelectItem value="3">v3</SelectItem>
+                        <SelectItem value="4">v4</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Fecha desde
-                  </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !permDateFrom && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {permDateFrom ? format(permDateFrom, "dd/MM/yyyy") : "Seleccionar"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={permDateFrom}
-                        onSelect={setPermDateFrom}
-                        initialFocus
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Fecha desde
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !permDateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {permDateFrom ? format(permDateFrom, "dd/MM/yyyy") : "Seleccionar"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={permDateFrom}
+                          onSelect={setPermDateFrom}
+                          initialFocus
+                          locale={es}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-black mb-2 block">
-                    Fecha hasta
-                  </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !permDateTo && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {permDateTo ? format(permDateTo, "dd/MM/yyyy") : "Seleccionar"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={permDateTo}
-                        onSelect={setPermDateTo}
-                        initialFocus
-                        locale={es}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-black mb-2 block">
+                      Fecha hasta
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !permDateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {permDateTo ? format(permDateTo, "dd/MM/yyyy") : "Seleccionar"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={permDateTo}
+                          onSelect={setPermDateTo}
+                          initialFocus
+                          locale={es}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-              </div>
               </div>
 
               {/* Planos Selection */}
               <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
                 <span className="font-medium text-foreground">Seleccionar todos los planos</span>
-                <Checkbox 
+                <Checkbox
                   checked={selectedPlanos.length === filteredPermPlanos.length}
                   onCheckedChange={handleSelectAll}
                 />
@@ -968,7 +1004,7 @@ export const UsuariosPage = () => {
                           <p className="font-medium text-foreground">{plano.codigo} - {plano.nombre}</p>
                           <p className="text-sm text-muted-foreground">Zona: {plano.zona} | Sistema: {plano.sistema}</p>
                         </div>
-                        <Checkbox 
+                        <Checkbox
                           checked={selectedPlanos.includes(plano.id)}
                           onCheckedChange={() => handleTogglePlano(plano.id)}
                         />
@@ -1058,7 +1094,7 @@ export const UsuariosPage = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-2 justify-end pt-4 border-t">
                 <Button variant="outline" onClick={() => setShowPermissionsModal(false)}>
                   Cancelar
