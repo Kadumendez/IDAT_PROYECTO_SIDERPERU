@@ -58,4 +58,3 @@ export const deletePlano = async (id_plano: string): Promise<boolean> => {
 
     return true
 }
-
