@@ -20,16 +20,21 @@ El proyecto se desarrolló como parte del módulo de **Proyecto Integrador 1** d
 
 La aplicación está estructurada en capas claras para facilitar el mantenimiento y escalabilidad:
 
+# 🧩 Estructura del Proyecto – Frontend (React)
+
+```plaintext
 Frontend (React)
 ├─ src/
-│ ├─ pages/ → Vistas principales (Dashboard, Planos, Usuarios, Configuración)
-│ ├─ components/ui/ → Componentes reutilizables (Layout, Modales, Inputs, Toasts)
-│ ├─ components/supabase/ → Servicios de conexión (users.tsx, planos.tsx)
-│ ├─ types/ → Tipados de entidades (plano, usuario, zona, etc.)
-│ ├─ lib/ → Configuración del cliente Supabase
-│ └─ hooks/ → Lógica compartida (autenticación, estados)
+│  ├─ pages/    → Vistas principales (Dashboard, Planos, Usuarios, Configuración)
+│  ├─ components/
+│  │  ├─ ui/      → Componentes reutilizables (Layout, Modales, Inputs, Toasts)
+│  │  └─ supabase → Servicios de conexión (users.tsx, planos.tsx)
+│  ├─ types/       → Tipados de entidades (plano, usuario, zona, etc.)
+│  ├─ lib/         → Configuración del cliente Supabase
+│  └─ hooks/       → Lógica compartida (autenticación, estados)
 │
-└─ .env → Variables de entorno con claves del proyecto
+└─ .env            → Variables de entorno con claves del proyecto
+```
 
 
 
@@ -45,20 +50,23 @@ Frontend (React)
 ## ⚙️ Instalación y ejecución local
 
 ### 1️⃣ Clonar el repositorio
-```bash
+~~~bash
 git clone https://github.com/Kadumendez/IDAT_PROYECTO_SIDERPERU.git
 cd IDAT_PROYECTO_SIDERPERU
+~~~
 
-
-###2️⃣ Instalar dependencias
+### 2️⃣ Instalar dependencias
+~~~bash
 npm install
+~~~
 
 ### 3️⃣ Configurar variables de entorno
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crea un archivo `.env` en la **raíz** del proyecto con las siguientes variables:
 
-```env
+~~~env
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
+~~~
 
 
 ## 📩 Contacto
