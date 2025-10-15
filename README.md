@@ -60,14 +60,6 @@ Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 
+xxxxxx
 
-## 📩 Contacto
 
-Si desea acceder a las credenciales de prueba o revisar la aplicación en ejecución,
-puede ponerse en contacto directamente conmigo:
-
-**Kadú Desposorio Méndez**   
-💻 [GitHub: @Kadumendez](https://github.com/Kadumendez)
-
-Por motivos de seguridad, las claves del archivo `.env` no se publican en este repositorio.  
-Serán compartidas solo con fines académicos si se solicitan.
