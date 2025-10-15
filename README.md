@@ -1,73 +1,73 @@
-# Welcome to your Lovable project
+# 🏗️ IDAT_PROYECTO_SIDERPERU
 
-## Project info
+Aplicación web desarrollada con **React + Vite + TypeScript**, conectada a **Supabase** como backend.  
+Permite la **gestión de planos técnicos**, usuarios y zonas dentro de una empresa siderúrgica.  
+El proyecto se desarrolló como parte del módulo de **Proyecto Integrador 1** del programa de **Desarrollo de Tecnología de la Información** en IDAT.
 
-**URL**: https://lovable.dev/projects/c693a2dd-7335-4bca-9d80-ebad3eb0d812
+---
 
-## How can I edit this code?
+## 🚀 Tecnologías utilizadas
 
-There are several ways of editing your application.
+- ⚛️ **React + Vite** → Frontend moderno y rápido.  
+- 🧠 **TypeScript** → Tipado fuerte y mantenimiento limpio.  
+- 🗄️ **Supabase** → Base de datos PostgreSQL, autenticación JWT, API REST y almacenamiento.  
+- 🎨 **TailwindCSS** → Estilos responsivos y consistentes.  
+- 🧩 **GitHub** → Control de versiones y publicación del código fuente.  
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c693a2dd-7335-4bca-9d80-ebad3eb0d812) and start prompting.
+## 🧩 Arquitectura general del sistema
 
-Changes made via Lovable will be committed automatically to this repo.
+La aplicación está estructurada en capas claras para facilitar el mantenimiento y escalabilidad:
 
-**Use your preferred IDE**
+Frontend (React)
+├─ src/
+│ ├─ pages/ → Vistas principales (Dashboard, Planos, Usuarios, Configuración)
+│ ├─ components/ui/ → Componentes reutilizables (Layout, Modales, Inputs, Toasts)
+│ ├─ components/supabase/ → Servicios de conexión (users.tsx, planos.tsx)
+│ ├─ types/ → Tipados de entidades (plano, usuario, zona, etc.)
+│ ├─ lib/ → Configuración del cliente Supabase
+│ └─ hooks/ → Lógica compartida (autenticación, estados)
+│
+└─ .env → Variables de entorno con claves del proyecto
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
+### 🧱 Backend (Supabase)
+- **Base de datos:** PostgreSQL (tablas, vistas y relaciones)
+- **API REST automática:** generada por Supabase (`/rest/v1/`)
+- **Autenticación JWT**
+- **Reglas RLS (Row-Level Security)** para proteger los datos por usuario
+- **Almacenamiento de archivos (Storage)**, preparado para guardar planos técnicos
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## ⚙️ Instalación y ejecución local
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 1️⃣ Clonar el repositorio
+```bash
+git clone https://github.com/Kadumendez/IDAT_PROYECTO_SIDERPERU.git
+cd IDAT_PROYECTO_SIDERPERU
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
 
-**Edit a file directly in GitHub**
+###2️⃣ Instalar dependencias
+npm install
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3️⃣ Configurar variables de entorno
+Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## 📩 Contacto
 
-This project is built with:
+Si desea acceder a las credenciales de prueba o revisar la aplicación en ejecución,
+puede ponerse en contacto directamente conmigo:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**Kadú Desposorio Méndez**   
+💻 [GitHub: @Kadumendez](https://github.com/Kadumendez)
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c693a2dd-7335-4bca-9d80-ebad3eb0d812) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Por motivos de seguridad, las claves del archivo `.env` no se publican en este repositorio.  
+Serán compartidas solo con fines académicos si se solicitan.
