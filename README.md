@@ -20,7 +20,7 @@ El proyecto se desarrolló como parte del módulo de **Proyecto Integrador 1** d
 
 La aplicación está estructurada en capas claras para facilitar el mantenimiento y escalabilidad:
 
-Frontend (React)
+Frontend (_React_)
 ├─ src/
 │ ├─ pages/ → Vistas principales (Dashboard, Planos, Usuarios, Configuración)
 │ ├─ components/ui/ → Componentes reutilizables (Layout, Modales, Inputs, Toasts)
