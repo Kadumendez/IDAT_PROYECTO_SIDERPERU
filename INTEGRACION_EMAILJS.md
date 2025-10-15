@@ -6,7 +6,7 @@
 ✔️ El enlace abre la pantalla de reset con el token de la URL  
 ✔️ No hay dependencias rotas ni rutas cambiadas  
 ✔️ Los textos están en español y adaptados a SIDERPERU  
-✔️ Todo funciona sin backend ni base de datos (solo demo)
+✔️ Todo funciona sin backend ni base de datos
 
 ---
 
